@@ -12,7 +12,7 @@ Settings::Settings(int argc, char *argv[]) {
 	char *cmdString[15];
 	cmdString[ 0] = (char*)"bdsm";
 	cmdString[ 1] = (char*)"-lambda";
-	cmdString[ 2] = (char*)"1.0";
+	cmdString[ 2] = (char*)"0.5";
 	cmdString[ 3] = (char*)"-mu";
 	cmdString[ 4] = (char*)"0.1";
 	cmdString[ 5] = (char*)"-out";
