@@ -15,21 +15,24 @@ Settings::Settings(int argc, char *argv[]) {
 	cmdString[ 2] = (char*)"0.5";
 	cmdString[ 3] = (char*)"-mu";
 	cmdString[ 4] = (char*)"0.1";
-	cmdString[ 5] = (char*)"-out";
-	cmdString[ 6] = (char*)"/Users/johnh/Desktop/test";
-	cmdString[ 7] = (char*)"-nt";
-	cmdString[ 8] = (char*)"20";
-	argc = 9;
+	cmdString[ 5] = (char*)"-phi";
+	cmdString[ 6] = (char*)"0.1";
+	cmdString[ 7] = (char*)"-out";
+	cmdString[ 8] = (char*)"/Users/johnh/Desktop/test";
+	cmdString[ 9] = (char*)"-nt";
+	cmdString[10] = (char*)"20";
+	argc = 11;
 	argv = cmdString;
 #	endif
 
-	enum Mode { OUTPUT_FILE, LAMBDA, MU, NUM_TAXA, NONE };
+	enum Mode { OUTPUT_FILE, LAMBDA, MU, PHI, NUM_TAXA, NONE };
 
 	/* set default values for parameters */
-	outputFileName = "";
-	speciationRate = 1000000;
-	extinctionRate = 0;
-	numLivingTaxa  = 10;
+	outputFileName    = "";
+	speciationRate    = 1.0;
+	extinctionRate    = 0.5;
+    fossilizationRate = 0.5;
+	numLivingTaxa     = 10;
 	
 	if (argc > 1)
 		{
@@ -51,6 +54,8 @@ Settings::Settings(int argc, char *argv[]) {
 					status = LAMBDA;
 				else if ( cmd == "-mu" )
 					status = MU;
+				else if ( cmd == "-phi" )
+					status = PHI;
 				else if ( cmd == "-out" )
 					status = OUTPUT_FILE;
 				else if ( cmd == "-nt" )
@@ -68,6 +73,8 @@ Settings::Settings(int argc, char *argv[]) {
 					speciationRate = atof(argv[i]);
 				else if ( status == MU )
 					extinctionRate = atof(argv[i]);
+				else if ( status == PHI )
+					fossilizationRate = atof(argv[i]);
 				else if ( status == OUTPUT_FILE )
 					outputFileName = argv[i];
 				else if ( status == NUM_TAXA )
@@ -95,6 +102,7 @@ void Settings::printUsage(void) {
 	std::cout << "   -nt     : Number of living taxa" << std::endl;
 	std::cout << "   -lambda : Speciation rate" << std::endl;
 	std::cout << "   -mu     : Extinction rate" << std::endl;
+	std::cout << "   -phi    : Fossilization rate" << std::endl;
 	std::cout << std::endl;
 	exit(0);
 

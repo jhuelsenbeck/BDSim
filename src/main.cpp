@@ -14,8 +14,9 @@ int main (int argc, char* argv[]) {
     MbRandom myRandom;
     
     // generate the tree
-    Tree myTree(&myRandom, mySettings.getSpeciationRate(), mySettings.getExtinctionRate(), mySettings.getNumLivingTaxa(), 10.0);
-
-
+    Tree myTree(&myRandom, mySettings.getSpeciationRate(), mySettings.getExtinctionRate(), mySettings.getFossilizationRate(), mySettings.getNumLivingTaxa(), 10.0);
+    myTree.printTree();
+    std::cout << myTree.getNewick() << std::endl;
+    
     return 0;
 }

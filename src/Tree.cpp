@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <iostream>
 #include <set>
 #include "MbRandom.h"
@@ -6,16 +7,22 @@
 
 
 
-Tree::Tree(MbRandom* rp, double l, double m, int n, double t) {
+Tree::Tree(MbRandom* rp, double l, double m, double p, int n, double t) {
 
     ranPtr        = rp;
     lambda        = l;
     mu            = m;
+    phi           = p;
     numLivingTaxa = n;
     duration      = t;
     root          = NULL;
 
     buildBirthDeathTree();
+}
+
+Tree::Tree(Tree& t) {
+
+    copyTree(t);
 }
 
 Tree::~Tree(void) {
@@ -27,6 +34,10 @@ Node* Tree::addNode(void) {
 
     Node* newNode = new Node;
     newNode->setIndex((int)nodes.size());
+    char cStr[32];
+    sprintf(cStr, "Taxon_%d", newNode->getIndex());
+    std::string cppStr = cStr;
+    newNode->setName(cppStr);
     nodes.push_back(newNode);
     return newNode;
 }
@@ -57,10 +68,20 @@ void Tree::buildBirthDeathTree(void) {
                 // pick a branch at random from the active nodes
                 p = randomlyChosenNodeFromSet(activeNodes);
                 p->setTime(curT);
-                if ( ranPtr->uniformRv() < (mu / (lambda+mu)) )
+                double u = ranPtr->uniformRv();
+                if ( u <= (mu / (lambda+mu+phi)) )
                     {
                     // extinction event
                     activeNodes.erase(p);
+                    }
+                else if ( u > (mu / (lambda+mu+phi)) && u <= ((mu+phi) / (lambda+mu+phi)) )
+                    {
+                    // fossilization event
+                    Node* n1 = addNode();
+                    p->addDescendant(n1);
+                    n1->setAncestor(p);
+                    activeNodes.erase(p);
+                    activeNodes.insert(n1);
                     }
                 else
                     {
@@ -99,6 +120,70 @@ void Tree::clearTree(void) {
     nodes.clear();
 }
 
+void Tree::copyTree(Tree& t) {
+
+    ranPtr        = t.ranPtr;
+    lambda        = t.lambda;
+    mu            = t.mu;
+    duration      = t.duration;
+    numLivingTaxa = t.numLivingTaxa;
+    
+    clearTree();
+    for (int i=0; i<t.nodes.size(); i++)
+        addNode();
+    
+    for (int i=0; i<t.nodes.size(); i++)
+        {
+        Node* copyFrom = t.nodes[i];
+        Node* copyTo   = nodes[i];
+        
+        if (copyFrom == t.root)
+            root = copyTo;
+        
+        copyTo->setTime(copyFrom->getTime());
+        if (copyFrom->getAncestor() != NULL)
+            copyTo->setAncestor( nodes[copyFrom->getAncestor()->getIndex()] );
+        else
+            copyTo->setAncestor(NULL);
+            
+        std::vector<Node*> fromDesc = copyFrom->getDescendants();
+        for (std::vector<Node*>::iterator it = fromDesc.begin(); it != fromDesc.end(); it++)
+            {
+            copyTo->addDescendant( nodes[(*it)->getIndex()] );
+            }
+        }
+}
+
+int Tree::dex(Node* p) {
+
+	if (p == NULL)
+		return -1;
+	else 
+		return p->getIndex();
+}
+
+std::string Tree::getNewick(void) {
+
+	std::stringstream ss;
+	writeTree(root, ss);
+	std::string newick = ss.str();
+	return newick;
+}
+
+void Tree::printTree(void) {
+
+    showTree(root, 3);
+}
+
+void Tree::pruneToReconstructedProcess(void) {
+
+    std::vector<bool> nodeFlags(nodes.size());
+    for (int i=0; i<nodeFlags.size(); i++)
+        nodeFlags[i] = false;
+    
+        
+}
+
 Node* Tree::randomlyChosenNodeFromSet(std::set<Node*>& s) {
 
     int whichElement = (int)(ranPtr->uniformRv() * s.size());
@@ -110,6 +195,51 @@ Node* Tree::randomlyChosenNodeFromSet(std::set<Node*>& s) {
         k++;
         }
     return NULL;
+}
+
+void Tree::showTree(Node* p, int indent) {
+
+	if (p != NULL)
+		{
+        std::vector<Node*> ndeDescendants = p->getDescendants();
+		for (int i=0; i<indent; i++)
+			std::cout << " ";
+        std::cout << p->getIndex();
+        std::cout << " ( ";
+        for (std::vector<Node*>::iterator it = ndeDescendants.begin(); it != ndeDescendants.end(); it++)
+            std::cout << (*it)->getIndex() << " ";
+        std::cout << ") " << p->getTime();
+        if (p->getNumDescendants() == 0)
+            std::cout << " (" << p->getName() << ") ";
+		if (p == root)
+			std::cout << " <- Root";
+        std::cout << std::endl;
+        for (std::vector<Node*>::iterator it = ndeDescendants.begin(); it != ndeDescendants.end(); it++)
+            showTree(*it, indent+2);
+		}
+}
+
+void Tree::writeTree(Node* p, std::stringstream& ss) {
+
+	if (p != NULL)
+		{
+		if (p->getNumDescendants() == 0)
+			{
+			ss << p->getName() << ":" << std::fixed << std::setprecision(2) << p->getTime();
+			}
+		else
+			{
+            ss << "(";
+            std::vector<Node*> myDescendants = p->getDescendants();
+            for (int i=0; i<myDescendants.size(); i++)
+                {
+                writeTree(myDescendants[i], ss);
+                if (i + 1 != myDescendants.size())
+                    ss << ",";
+                }
+            ss << "):" << std::fixed << std::setprecision(2) << p->getTime();
+            }
+		}
 }
 
 
