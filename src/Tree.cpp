@@ -50,10 +50,14 @@ void Tree::buildBirthDeathTree(void) {
         // this is the list of active nodes
         std::set<Node*> activeNodes;
         
-        // we start with one lineage
+        // we start with two lineages
         root = addNode();
         root->setTime(0.0);
         Node* p = addNode();
+        p->setAncestor(root);
+        root->addDescendant(p);
+        activeNodes.insert(p);
+        p = addNode();
         p->setAncestor(root);
         root->addDescendant(p);
         activeNodes.insert(p);
@@ -82,6 +86,7 @@ void Tree::buildBirthDeathTree(void) {
                     n1->setAncestor(p);
                     activeNodes.erase(p);
                     activeNodes.insert(n1);
+                    fossilTaxa.push_back(p);
                     }
                 else
                     {
@@ -98,10 +103,14 @@ void Tree::buildBirthDeathTree(void) {
                     }
                 }
             }
+        initializeDownPassSequence();
         for (std::set<Node*>::iterator it = activeNodes.begin(); it != activeNodes.end(); it++)
+            {
             (*it)->setTime(duration);
+            extantTaxa.push_back(*it);
+            }
         std::cout << "Number of nodes = " << nodes.size() << " Number of extant taxa = " << activeNodes.size() << " Duration = " << duration << std::endl;
-        if (activeNodes.size() != numLivingTaxa)
+        if (activeNodes.size() != numLivingTaxa || (mrcaOfExtantTaxa() != root))
             {
             clearTree();
             activeNodes.clear();
@@ -118,6 +127,9 @@ void Tree::clearTree(void) {
     for (int i=0; i<nodes.size(); i++)
         delete nodes[i];
     nodes.clear();
+    extantTaxa.clear();
+    fossilTaxa.clear();
+    downPassSequence.clear();
 }
 
 void Tree::copyTree(Tree& t) {
@@ -125,6 +137,7 @@ void Tree::copyTree(Tree& t) {
     ranPtr        = t.ranPtr;
     lambda        = t.lambda;
     mu            = t.mu;
+    phi           = t.phi;
     duration      = t.duration;
     numLivingTaxa = t.numLivingTaxa;
     
@@ -152,6 +165,18 @@ void Tree::copyTree(Tree& t) {
             copyTo->addDescendant( nodes[(*it)->getIndex()] );
             }
         }
+    
+    extantTaxa.clear();
+    for (int i=0; i<t.extantTaxa.size(); i++)
+        extantTaxa.push_back( nodes[t.extantTaxa[i]->getIndex()] );
+
+    fossilTaxa.clear();
+    for (int i=0; i<t.fossilTaxa.size(); i++)
+        fossilTaxa.push_back( nodes[t.fossilTaxa[i]->getIndex()] );
+    
+    downPassSequence.clear();
+    for (int i=0; i<t.downPassSequence.size(); i++)
+        downPassSequence.push_back( nodes[t.downPassSequence[i]->getIndex()] );
 }
 
 int Tree::dex(Node* p) {
@@ -168,6 +193,57 @@ std::string Tree::getNewick(void) {
 	writeTree(root, ss);
 	std::string newick = ss.str();
 	return newick;
+}
+
+void Tree::initializeDownPassSequence(void) {
+
+    downPassSequence.clear();
+    passDown(root);
+}
+
+void Tree::passDown(Node* p) {
+
+    if (p != NULL)
+        {
+        std::vector<Node*> ndeDescendants = p->getDescendants();
+        for (std::vector<Node*>::iterator it = ndeDescendants.begin(); it != ndeDescendants.end(); it++)
+            passDown(*it);
+        downPassSequence.push_back(p);
+        }
+}
+
+Node* Tree::mrcaOfExtantTaxa(void) {
+
+    std::vector<bool> flags(nodes.size());
+    for (size_t i=0; i<flags.size(); i++)
+        flags[i] = false;
+    
+    for (size_t i=0; i<extantTaxa.size(); i++)
+        {
+        Node* p = extantTaxa[i];
+        do
+            {
+            flags[p->getIndex()] = true;
+            p = p->getAncestor();
+            } while (p != NULL);
+        }
+    
+    Node* mrca = NULL;
+    for (size_t i=0; i<getNumberOfDownPassNodes(); i++)
+        {
+        Node* p = getDownPassNode(i);
+        std::vector<Node*> ndeDescendants = p->getDescendants();
+        int numFlagged = 0;
+        for (std::vector<Node*>::iterator it = ndeDescendants.begin(); it != ndeDescendants.end(); it++)
+            {
+            if (flags[(*it)->getIndex()] == true)
+                numFlagged++;
+            }
+        if (numFlagged == 2)
+            mrca = p;
+        }
+
+    return mrca;
 }
 
 void Tree::printTree(void) {

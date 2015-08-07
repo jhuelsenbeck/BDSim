@@ -12,6 +12,7 @@ class Node {
         void                addDescendant(Node* p);
         Node*               getAncestor(void) { return ancestor; }
         std::vector<Node*>& getDescendants(void) { return descendants; }
+        Node*               getDescendant(int idx);
         int                 getIndex(void) { return index; }
         std::string         getName(void) { return name; }
         int                 getNumDescendants(void);

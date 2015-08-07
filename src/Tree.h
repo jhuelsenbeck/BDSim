@@ -14,7 +14,9 @@ class Tree {
                             Tree(MbRandom* rp, double l, double m, double p, int n, double t);
                             Tree(Tree& t);
                            ~Tree(void);
+        Node*               getDownPassNode(size_t idx) { return downPassSequence[idx]; }
         std::string         getNewick(void);
+        int                 getNumberOfDownPassNodes(void) { return (int)downPassSequence.size(); }
         void                printTree(void);
     
     private:
@@ -23,6 +25,9 @@ class Tree {
         int                 dex(Node* p);
         void                clearTree(void);
         void                buildBirthDeathTree(void);
+        void                initializeDownPassSequence(void);
+        Node*               mrcaOfExtantTaxa(void);
+        void                passDown(Node* p);
         void                pruneToReconstructedProcess(void);
         Node*               randomlyChosenNodeFromSet(std::set<Node*>& s);
         void                showTree(Node* p, int indent);
@@ -35,6 +40,9 @@ class Tree {
         double              duration;
         int                 numLivingTaxa;
         std::vector<Node*>  nodes;
+        std::vector<Node*>  extantTaxa;
+        std::vector<Node*>  fossilTaxa;
+        std::vector<Node*>  downPassSequence;
         Node*               root;
 };
 
