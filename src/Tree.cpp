@@ -120,6 +120,21 @@ void Tree::buildBirthDeathTree(void) {
             goodTree = true;
             }
         } while(goodTree == false);
+    
+    for (size_t i=0; i<extantTaxa.size(); i++)
+        {
+        char cStr[20];
+        sprintf(cStr, "Taxon_%lu", i+1);
+        std::string cppStr = cStr;
+        extantTaxa[i]->setName(cppStr);
+        }
+    for (size_t i=0; i<fossilTaxa.size(); i++)
+        {
+        char cStr[20];
+        sprintf(cStr, "Fossil_%lu", i+1);
+        std::string cppStr = cStr;
+        fossilTaxa[i]->setName(cppStr);
+        }
 }
 
 void Tree::clearTree(void) {
@@ -285,7 +300,7 @@ void Tree::showTree(Node* p, int indent) {
         for (std::vector<Node*>::iterator it = ndeDescendants.begin(); it != ndeDescendants.end(); it++)
             std::cout << (*it)->getIndex() << " ";
         std::cout << ") " << p->getTime();
-        if (p->getNumDescendants() == 0)
+        if (p->getNumDescendants() == 0 || p->getNumDescendants() == 1)
             std::cout << " (" << p->getName() << ") ";
 		if (p == root)
 			std::cout << " <- Root";
