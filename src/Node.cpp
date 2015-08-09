@@ -7,6 +7,9 @@ Node::Node(void) {
     ancestor = NULL;
     time     = 0.0;
     name     = "";
+    fossil   = false;
+    extinct  = false;
+    
 }
 
 void Node::addDescendant(Node* p) {

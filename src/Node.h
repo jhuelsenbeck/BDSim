@@ -17,9 +17,13 @@ class Node {
         std::string         getName(void) { return name; }
         int                 getNumDescendants(void);
         double              getTime(void) { return time; }
+        bool                isExtinct(void) const { return extinct; }
+        bool                isFossil(void) const { return fossil; }
         void                removeDescendants(void);
         void                setAncestor(Node* p) { ancestor = p; }
         void                setIndex(int x) { index = x; }
+        void                setIsExtinct(bool tf) { extinct = tf; }
+        void                setIsFossil(bool tf) { fossil = tf; }
         void                setName(std::string s) { name = s; }
         void                setTime(double x) { time = x; }
 
@@ -29,6 +33,8 @@ class Node {
         std::vector<Node*>  descendants;
         std::string         name;
         double              time;
+        bool                extinct;
+        bool                fossil;
 };
 
 

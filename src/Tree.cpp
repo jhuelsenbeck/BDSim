@@ -35,7 +35,7 @@ Node* Tree::addNode(void) {
     Node* newNode = new Node;
     newNode->setIndex((int)nodes.size());
     char cStr[32];
-    sprintf(cStr, "Taxon_%d", newNode->getIndex());
+    sprintf(cStr, "Node_%d", newNode->getIndex());
     std::string cppStr = cStr;
     newNode->setName(cppStr);
     nodes.push_back(newNode);
@@ -77,12 +77,14 @@ void Tree::buildBirthDeathTree(void) {
                     {
                     // extinction event
                     activeNodes.erase(p);
+                    p->setIsExtinct(true);
                     }
                 else if ( u > (mu / (lambda+mu+phi)) && u <= ((mu+phi) / (lambda+mu+phi)) )
                     {
                     // fossilization event
                     Node* n1 = addNode();
                     p->addDescendant(n1);
+                    p->setIsFossil(true);
                     n1->setAncestor(p);
                     activeNodes.erase(p);
                     activeNodes.insert(n1);
@@ -315,9 +317,17 @@ void Tree::writeTree(Node* p, std::stringstream& ss) {
 	if (p != NULL)
 		{
 		if (p->getNumDescendants() == 0)
-			{
-			ss << p->getName() << ":" << std::fixed << std::setprecision(2) << p->getTime();
+            {
+            double bl = (p->getAncestor() == NULL ? 0 : p->getTime() - p->getAncestor()->getTime());
+			ss << p->getName() << ":" << std::fixed << std::setprecision(2) << bl;
 			}
+        else if (p->getNumDescendants() == 1)
+            {
+            ss << "(";
+            writeTree(p->getDescendants()[0], ss);
+            double bl = (p->getAncestor() == NULL ? 0 : p->getTime() - p->getAncestor()->getTime());
+            ss << ")" << p->getName() << ":" << std::fixed << std::setprecision(2) << bl;
+            }
 		else
 			{
             ss << "(";
@@ -328,7 +338,8 @@ void Tree::writeTree(Node* p, std::stringstream& ss) {
                 if (i + 1 != myDescendants.size())
                     ss << ",";
                 }
-            ss << "):" << std::fixed << std::setprecision(2) << p->getTime();
+            double bl = (p->getAncestor() == NULL ? 0 : p->getTime() - p->getAncestor()->getTime());
+            ss << "):" << std::fixed << std::setprecision(2) << bl;
             }
 		}
 }
