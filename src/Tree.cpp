@@ -218,6 +218,38 @@ void Tree::initializeDownPassSequence(void) {
     passDown(root);
 }
 
+bool Tree::isExtantTaxon(Node* p) {
+
+    for (int i=0; i<extantTaxa.size(); i++)
+        {
+        if (p == extantTaxa[i])
+            return true;
+        }
+    return false;
+}
+
+bool Tree::isFossilTaxon(Node* p) {
+
+    for (int i=0; i<fossilTaxa.size(); i++)
+        {
+        if (p == fossilTaxa[i])
+            return true;
+        }
+    return false;
+}
+
+int Tree::lengthOfLongestName(void) {
+
+    int len = 0;
+    for (int i=0; i<nodes.size(); i++)
+        {
+        std::string s = nodes[i]->getName();
+        if (s.length() > len)
+            len = (int)s.length();
+        }
+    return len;
+}
+
 void Tree::passDown(Node* p) {
 
     if (p != NULL)

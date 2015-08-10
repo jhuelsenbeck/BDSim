@@ -15,8 +15,14 @@ class Tree {
                             Tree(Tree& t);
                            ~Tree(void);
         Node*               getDownPassNode(size_t idx) { return downPassSequence[idx]; }
+        std::vector<Node*>& getExtantTaxa(void) { return extantTaxa; }
         std::string         getNewick(void);
         int                 getNumberOfDownPassNodes(void) { return (int)downPassSequence.size(); }
+        int                 getNumberOfNodes(void) { return (int)nodes.size(); }
+        bool                isExtantTaxon(Node* p);
+        bool                isFossilTaxon(Node* p);
+        bool                isRoot(Node* p) { return (p == root); }
+        int                 lengthOfLongestName(void);
         void                printTree(void);
     
     private:
