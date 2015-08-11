@@ -10,7 +10,7 @@ class Data {
 
 	public:
                             Data(int nn, int nc, MbRandom* rp, Tree* t, double r);
-                            Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> theta, std::vector<double> pi);
+                            Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> theta, std::vector<double> pi, double alpha);
                            ~Data(void);
         void                print(void);
         void                printExtant(void);
@@ -18,7 +18,7 @@ class Data {
     private:
                             Data(void) { }
         void                simulateMorphologicalCharacters(void);
-        void                simulateMolecularCharacters(std::vector<double> theta, std::vector<double> pi);
+        void                simulateMolecularCharacters(std::vector<double> theta, std::vector<double> pi, double alpha);
         double              rate;
         MbRandom*           ranPtr;
         Tree*               treePtr;

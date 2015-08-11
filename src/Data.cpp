@@ -26,7 +26,7 @@ Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r) {
     printExtant();
 }
 
-Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> theta, std::vector<double> pi) {
+Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> theta, std::vector<double> pi, double alpha) {
 
     numNodes = nn;
     numChar  = nc;
@@ -42,7 +42,7 @@ Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> 
         for (int j=0; j<numChar; j++)
             dataMatrix[i][j] = 0;
     
-    simulateMolecularCharacters(theta, pi);
+    simulateMolecularCharacters(theta, pi, alpha);
     printExtant();
 }
 
@@ -91,7 +91,7 @@ void Data::printExtant(void) {
         }
 }
 
-void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<double> pi) {
+void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<double> pi, double alpha) {
 
     // set up rate matrix
     double q[4][4];
@@ -126,6 +126,9 @@ void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<do
     // simulate
     for (int c=0; c<numChar; c++)
         {
+        double r = 1.0;
+        if (alpha < 100.0)
+            r = ranPtr->gammaRv(alpha, alpha);
         for (int n=0; n<treePtr->getNumberOfDownPassNodes(); n++)
             {
             Node* p = treePtr->getDownPassNode(n);
@@ -146,7 +149,7 @@ void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<do
                 }
             else
                 {
-                double t = (p->getTime() - p->getAncestor()->getTime());
+                double t = (p->getTime() - p->getAncestor()->getTime()) * r;
                 double curT = 0.0;
                 int curState = dataMatrix[p->getAncestor()->getIndex()][c];
                 while (curT < t)
