@@ -146,7 +146,7 @@ void Data::printNexus(std::iostream &outStream, bool isMorph, bool includeFossil
     
     outStream << "#NEXUS" << std::endl;
     outStream << "begin data;" << std::endl;
-    outStream << "dimension ntax=" << ntaxa << " nchar=" << numChar << ";" << std::endl;
+    outStream << "dimensions ntax=" << ntaxa << " nchar=" << numChar << ";" << std::endl;
     if ( isMorph == true )
     {
         outStream << "format datatype=Standard" << " missing=?"<< ";" << std::endl;

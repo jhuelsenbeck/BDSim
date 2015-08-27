@@ -22,7 +22,7 @@ Settings::Settings(int argc, char *argv[]) {
 //    cmdString[ 8] = (char*)"/Users/johnh/Desktop/test";
     cmdString[ 8] = (char*)"./test";
     cmdString[ 9] = (char*)"-nr";
-    cmdString[10] = (char*)"100";
+    cmdString[10] = (char*)"10";
 	cmdString[11] = (char*)"-nt";
 	cmdString[12] = (char*)"20";
     cmdString[13] = (char*)"-bf";
