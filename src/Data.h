@@ -12,11 +12,14 @@ class Data {
                             Data(int nn, int nc, MbRandom* rp, Tree* t, double r);
                             Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> theta, std::vector<double> pi, double alpha);
                            ~Data(void);
-        void                print(void);
-        void                printExtant(void);
+        void                print(bool isMorph);
+        void                printExtant(bool isMorph);
+        void                printNexus(std::iostream &str, bool isMorph, bool includeFossils);
 
     private:
                             Data(void) { }
+
+        char                convertToDNA(unsigned val);
         void                simulateMorphologicalCharacters(void);
         void                simulateMolecularCharacters(std::vector<double> theta, std::vector<double> pi, double alpha);
         double              rate;

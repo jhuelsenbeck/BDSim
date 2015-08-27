@@ -23,7 +23,8 @@ Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r) {
             dataMatrix[i][j] = 0;
     
     simulateMorphologicalCharacters();
-    printExtant();
+//    printExtant(true);
+    print(true);
 }
 
 Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> theta, std::vector<double> pi, double alpha) {
@@ -43,7 +44,8 @@ Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> 
             dataMatrix[i][j] = 0;
     
     simulateMolecularCharacters(theta, pi, alpha);
-    printExtant();
+//    printExtant(false);
+    print(false);
 }
 
 
@@ -53,26 +55,55 @@ Data::~Data(void) {
     delete [] dataMatrix;
 }
 
-void Data::print(void) {
+
+char Data::convertToDNA(unsigned int val)
+{
+    switch ( val )
+    {
+        case 0:
+            return 'A';
+        case 1:
+            return 'C';
+        case 2:
+            return 'G';
+        case 3:
+            return 'T';
+            
+        default:
+            return '?';
+    }
+    
+}
+
+void Data::print(bool isMorph) {
 
     int maxLen = treePtr->lengthOfLongestName();
     for (int n=0; n<treePtr->getNumberOfDownPassNodes(); n++)
         {
         Node* p = treePtr->getDownPassNode(n);
-        if ( treePtr->isExtantTaxon(p) == true ||  treePtr->isFossilTaxon(p) == true )
+        if ( treePtr->isExtantTaxon(p) == true || treePtr->isFossilTaxon(p) == true )
             {
             std::string s = p->getName();
             std::cout << s << "   ";
             for (int i=0; i<maxLen-s.length(); i++)
                 std::cout << " ";
             for (int c=0; c<numChar; c++)
-                std::cout << dataMatrix[p->getIndex()][c];
+                {
+                if ( isMorph == true )
+                    {
+                    std::cout << dataMatrix[p->getIndex()][c];
+                    }
+                    else
+                    {
+                    std::cout << convertToDNA(dataMatrix[p->getIndex()][c]);
+                    }
+                }
             std::cout << std::endl;
             }
         }
 }
 
-void Data::printExtant(void) {
+void Data::printExtant(bool isMorph) {
 
     int maxLen = treePtr->lengthOfLongestName();
     for (int n=0; n<treePtr->getNumberOfDownPassNodes(); n++)
@@ -85,11 +116,85 @@ void Data::printExtant(void) {
             for (int i=0; i<maxLen-s.length(); i++)
                 std::cout << " ";
             for (int c=0; c<numChar; c++)
-                std::cout << dataMatrix[p->getIndex()][c];
+                {
+                if ( isMorph == true )
+                    {
+                    std::cout << dataMatrix[p->getIndex()][c];
+                    }
+                else
+                    {
+                    std::cout << convertToDNA(dataMatrix[p->getIndex()][c]);
+                    }
+                }
             std::cout << std::endl;
             }
         }
+    
 }
+
+void Data::printNexus(std::iostream &outStream, bool isMorph, bool includeFossils) {
+    
+    int ntaxa = 0;
+    for (int n=0; n<treePtr->getNumberOfDownPassNodes(); n++)
+    {
+        Node* p = treePtr->getDownPassNode(n);
+        if ( treePtr->isExtantTaxon(p) == true || (includeFossils == true && treePtr->isFossilTaxon(p) == true ) )
+        {
+            ++ntaxa;
+        }
+    }
+    
+    outStream << "#NEXUS" << std::endl;
+    outStream << "begin data;" << std::endl;
+    outStream << "dimension ntax=" << ntaxa << " nchar=" << numChar << ";" << std::endl;
+    if ( isMorph == true )
+    {
+        outStream << "format datatype=Standard" << " missing=?"<< ";" << std::endl;
+    }
+    else
+    {
+        outStream << "format datatype=DNA" << " missing=?"<< ";" << std::endl;
+    }
+    
+    
+    outStream << "MATRIX" << std::endl;
+    
+    int maxLen = treePtr->lengthOfLongestName();
+    for (int n=0; n<treePtr->getNumberOfDownPassNodes(); n++)
+    {
+        Node* p = treePtr->getDownPassNode(n);
+        if ( treePtr->isExtantTaxon(p) == true || (includeFossils == true && treePtr->isFossilTaxon(p) == true ) )
+        {
+            std::string s = p->getName();
+            outStream << s << "   ";
+            for (int i=0; i<maxLen-s.length(); i++)
+                outStream << " ";
+            for (int c=0; c<numChar; c++)
+            {
+                if ( isMorph == true )
+                {
+                    outStream << dataMatrix[p->getIndex()][c];
+                }
+                else
+                {
+                    if ( treePtr->isFossilTaxon(p) == true )
+                    {
+                        outStream << "?";
+                    }
+                    else
+                    {
+                        outStream << convertToDNA(dataMatrix[p->getIndex()][c]);
+                    }
+                }
+            }
+            outStream << std::endl;
+        }
+    }
+    outStream << ";" << std::endl;
+    
+    outStream << "end;" << std::endl;
+}
+
 
 void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<double> pi, double alpha) {
 
@@ -105,6 +210,8 @@ void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<do
             k++;
             }
         }
+    
+    // normalize rates
     double averageRate = 0.0;
     for (int i=0; i<4; i++)
         {
@@ -129,7 +236,7 @@ void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<do
         double r = 1.0;
         if (alpha < 100.0)
             r = ranPtr->gammaRv(alpha, alpha);
-        for (int n=0; n<treePtr->getNumberOfDownPassNodes(); n++)
+        for (int n=treePtr->getNumberOfDownPassNodes()-1; n>=0; n--)
             {
             Node* p = treePtr->getDownPassNode(n);
             if ( treePtr->isRoot(p) == true )
@@ -187,7 +294,7 @@ void Data::simulateMorphologicalCharacters(void) {
         bool isVariable = false;
         do
             {
-            for (int n=0; n<treePtr->getNumberOfDownPassNodes(); n++)
+            for (int n=treePtr->getNumberOfDownPassNodes()-1; n>=0; n--)
                 {
                 Node* p = treePtr->getDownPassNode(n);
                 if ( treePtr->isRoot(p) == true )

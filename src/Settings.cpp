@@ -10,7 +10,7 @@ Settings::Settings(int argc, char *argv[]) {
 
 #	if 1
 	/* set up fake command-line argument string */
-	char *cmdString[15];
+	char *cmdString[20];
 	cmdString[ 0] = (char*)"bdsm";
 	cmdString[ 1] = (char*)"-lambda";
 	cmdString[ 2] = (char*)"0.5";
@@ -19,23 +19,27 @@ Settings::Settings(int argc, char *argv[]) {
 	cmdString[ 5] = (char*)"-phi";
 	cmdString[ 6] = (char*)"0.1";
 	cmdString[ 7] = (char*)"-out";
-	cmdString[ 8] = (char*)"/Users/johnh/Desktop/test";
-	cmdString[ 9] = (char*)"-nt";
-	cmdString[10] = (char*)"20";
-    cmdString[11] = (char*)"-bf";
-	cmdString[12] = (char*)"(0.4, 0.3, 0.2, 0.1)";
-    cmdString[13] = (char*)"-exch";
-	cmdString[14] = (char*)"(1.0, 2.0, 1.0, 1.0, 2.0, 1.0)";
-	argc = 15;
+//    cmdString[ 8] = (char*)"/Users/johnh/Desktop/test";
+    cmdString[ 8] = (char*)"./test";
+    cmdString[ 9] = (char*)"-nr";
+    cmdString[10] = (char*)"100";
+	cmdString[11] = (char*)"-nt";
+	cmdString[12] = (char*)"20";
+    cmdString[13] = (char*)"-bf";
+	cmdString[14] = (char*)"(0.4, 0.3, 0.2, 0.1)";
+    cmdString[15] = (char*)"-exch";
+	cmdString[16] = (char*)"(1.0, 2.0, 1.0, 1.0, 2.0, 1.0)";
+	argc = 17;
 	argv = cmdString;
 #	endif
 
     // process the string looking for number lists
     preprocessStr(&argc, argv);
     
-	enum Mode { OUTPUT_FILE, LAMBDA, MU, PHI, NUM_TAXA, NUM_MORPH, NUM_MOL, GAMMA_SHAPE, EXC_PARM, BASE_FREQ, NONE };
+	enum Mode { OUTPUT_FILE, NUM_REPS, LAMBDA, MU, PHI, NUM_TAXA, NUM_MORPH, NUM_MOL, GAMMA_SHAPE, EXC_PARM, BASE_FREQ, NONE };
 
 	/* set default values for parameters */
+    numReplicates                   = 1;
 	outputFileName                  = "";
 	speciationRate                  = 1.0;
 	extinctionRate                  = 0.5;
@@ -74,6 +78,8 @@ Settings::Settings(int argc, char *argv[]) {
 					status = OUTPUT_FILE;
 				else if ( cmd == "-nt" )
 					status = NUM_TAXA;
+                else if ( cmd == "-nr" )
+                    status = NUM_REPS;
 				else if ( cmd == "-nmorph" )
 					status = NUM_MORPH;
 				else if ( cmd == "-nmol" )
@@ -103,6 +109,8 @@ Settings::Settings(int argc, char *argv[]) {
 					outputFileName = argv[i];
 				else if ( status == NUM_TAXA )
 					numLivingTaxa = atoi(argv[i]);
+                else if ( status == NUM_REPS )
+                    numReplicates = atoi(argv[i]);
 				else if ( status == NUM_MORPH )
 					numMorphologicalCharacters = atoi(argv[i]);
 				else if ( status == NUM_MOL )
@@ -196,6 +204,7 @@ void Settings::preprocessStr(int* argc, char *argv[]) {
 void Settings::print(void) {
 
     std::cout << "Output file name                = \"" << outputFileName << "\"" << std::endl;
+    std::cout << "Number of simulation replicates = " << numReplicates << std::endl;
     std::cout << "Speciation rate                 = " << speciationRate << std::endl;
     std::cout << "Extinction rate                 = " << extinctionRate << std::endl;
     std::cout << "Fossilization rate              = " << fossilizationRate << std::endl;
@@ -217,6 +226,7 @@ void Settings::printUsage(void) {
 
 	std::cout << "Usage:" << std::endl;
 	std::cout << "   -out    : Output file name" << std::endl;
+    std::cout << "   -nr     : Number of simulation replicates" << std::endl;
 	std::cout << "   -nt     : Number of living taxa" << std::endl;
 	std::cout << "   -lambda : Speciation rate" << std::endl;
 	std::cout << "   -mu     : Extinction rate" << std::endl;

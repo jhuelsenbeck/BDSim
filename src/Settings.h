@@ -17,6 +17,7 @@ class Settings {
         int                 getNumLivingTaxa(void) { return numLivingTaxa; }
         int                 getNumMolecularCharacters(void) { return numMolecularCharacters; }
         int                 getNumMorphologicalCharacters(void) { return numMorphologicalCharacters; }
+        int                 getNumReplicates(void) { return numReplicates; }
         std::string         getOutputFileName(void) { return outputFileName; }
         std::vector<double> getStationaryFrequenciesParameters(void) { return stationaryFrequenciesParameters; }
         void                print(void);
@@ -45,6 +46,7 @@ class Settings {
         std::vector<double> exchangeabilityParameters;
         std::vector<double> stationaryFrequenciesParameters;
         std::vector< std::vector<double> >  tempVectors;
+        int                 numReplicates;
 };
 
 
