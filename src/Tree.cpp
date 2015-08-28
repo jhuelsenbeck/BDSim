@@ -7,7 +7,7 @@
 
 
 
-Tree::Tree(MbRandom* rp, double l, double m, double p, int n, double t) {
+Tree::Tree(MbRandom* rp, double l, double m, double p, int n, double t, bool r) {
 
     ranPtr        = rp;
     lambda        = l;
@@ -18,6 +18,12 @@ Tree::Tree(MbRandom* rp, double l, double m, double p, int n, double t) {
     root          = NULL;
 
     buildBirthDeathTree();
+    
+    if ( r == true )
+    {
+        pruneToReconstructedProcess();
+        initializeDownPassSequence();
+    }
 }
 
 Tree::Tree(Tree& t) {
@@ -257,6 +263,8 @@ void Tree::passDown(Node* p) {
         std::vector<Node*> ndeDescendants = p->getDescendants();
         for (std::vector<Node*>::iterator it = ndeDescendants.begin(); it != ndeDescendants.end(); it++)
             passDown(*it);
+            
+            p->setIndex(downPassSequence.size());
         downPassSequence.push_back(p);
         }
 }
@@ -301,10 +309,52 @@ void Tree::printTree(void) {
 }
 
 void Tree::pruneToReconstructedProcess(void) {
-
-    std::vector<bool> nodeFlags(nodes.size());
-    for (int i=0; i<nodeFlags.size(); i++)
-        nodeFlags[i] = false;
+    
+    for (size_t i=0; i<nodes.size(); ++i)
+    {
+        Node *curr_node = nodes[i];
+        if ( curr_node->isExtinct() )
+        {
+            // let's prune this one
+            
+            // get the parent node
+            Node *anc = curr_node->getAncestor();
+            Node *sibling = NULL;
+            
+            // the ancestor might be
+            if ( anc->getNumDescendants() > 1 )
+            {
+                sibling = anc->getDescendant( 0 );
+                if ( sibling == curr_node )
+                {
+                    sibling = anc->getDescendant( 1 );
+                }
+                
+                Node *great_anc = anc->getAncestor();
+                great_anc->removeDescendant(anc);
+                
+                great_anc->addDescendant( sibling );
+                sibling->setAncestor( great_anc );
+                
+                // remove the nodes from the list
+                nodes.erase( nodes.begin() + i );
+                nodes.erase(std::remove(nodes.begin(), nodes.end(), anc), nodes.end());
+                
+            }
+            else
+            {
+                // just remove this node
+                anc->removeDescendant(curr_node);
+                
+                // remove the nodes from the list
+                nodes.erase( nodes.begin() + i );
+            }
+            
+            // this is not efficient but for safety
+            i=0;
+        }
+        
+    }
     
         
 }

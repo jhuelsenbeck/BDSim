@@ -29,6 +29,21 @@ int Node::getNumDescendants(void) {
     return (int)descendants.size();
 }
 
+void Node::removeDescendant(Node* d)
+{
+    
+    for (std::vector<Node*>::iterator it = descendants.begin(); it!=descendants.end(); ++it)
+    {
+        if ( *it == d )
+        {
+            descendants.erase(it);
+            break;
+        }
+        
+    }
+     
+}
+
 void Node::removeDescendants(void) {
 
     descendants.clear();

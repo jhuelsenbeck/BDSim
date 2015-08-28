@@ -11,7 +11,7 @@ class Node;
 
 class Tree {
 	public:
-                            Tree(MbRandom* rp, double l, double m, double p, int n, double t);
+                            Tree(MbRandom* rp, double l, double m, double p, int n, double t, bool reconst=true);
                             Tree(Tree& t);
                            ~Tree(void);
         Node*               getDownPassNode(size_t idx) { return downPassSequence[idx]; }

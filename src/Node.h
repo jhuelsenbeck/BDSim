@@ -19,6 +19,7 @@ class Node {
         double              getTime(void) { return time; }
         bool                isExtinct(void) const { return extinct; }
         bool                isFossil(void) const { return fossil; }
+        void                removeDescendant(Node* p);
         void                removeDescendants(void);
         void                setAncestor(Node* p) { ancestor = p; }
         void                setIndex(int x) { index = x; }
