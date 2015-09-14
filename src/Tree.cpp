@@ -20,10 +20,11 @@ Tree::Tree(MbRandom* rp, double l, double m, double p, int n, double t, bool r) 
     buildBirthDeathTree();
     
     if ( r == true )
-    {
+        {
         pruneToReconstructedProcess();
         initializeDownPassSequence();
-    }
+        }
+    markReconstructedTree();
 }
 
 Tree::Tree(Tree& t) {
@@ -256,6 +257,84 @@ int Tree::lengthOfLongestName(void) {
     return len;
 }
 
+void Tree::listCalibrations(void) {
+
+    for (std::vector<Node*>::iterator it=nodes.begin(); it != nodes.end(); it++)
+        {
+        if ((*it)->isFossil() == true)
+            {
+            Node* p = (*it);
+            while (p->getIsInReconstructedTree() == false && p != root)
+                p = p->getAncestor();
+            
+            
+            std::cout << (*it)->getName() << " ";
+            std::cout << (*it)->getIndex() << " ";
+            std::cout << (*it)->getTime() << " ";
+            std::cout << "Calibrates node " << p->getIndex() << " ";
+            std::vector<std::string> desNames = p->getTaxonBipartition();
+            std::cout << "( ";
+            for (std::vector<std::string>::iterator it2 = desNames.begin(); it2 != desNames.end(); it2++)
+                std::cout << *it2 << " ";
+            std::cout << ") ";
+            std::cout << std::endl;
+            }
+        }
+
+
+}
+
+void Tree::markReconstructedTree(void) {
+
+    for (int i=0; i<nodes.size(); i++)
+        {
+        nodes[i]->setFlag(false);
+        nodes[i]->setIsInReconstructedTree(false);
+        }
+    
+    for (int i=0; i<extantTaxa.size(); i++)
+        {
+        Node* p = extantTaxa[i];
+        while (true)
+            {
+            if (p->getFlag() == false)
+                {
+                p->setFlag(true);
+                if (p == root)
+                    break;
+                else
+                    p = p->getAncestor();
+                }
+            else
+                {
+                p->setIsInReconstructedTree(true);
+                break;
+                }
+            }
+        }
+    
+    for (int i=0; i<downPassSequence.size(); i++)
+        {
+         Node* p = downPassSequence[i];
+         
+        std::vector<Node*> des = p->getDescendants();
+        if (des.size() == 0)
+            {
+            if (isExtantTaxon(p) == true)
+                p->addTaxonToBipartition(p->getName());
+            }
+        else
+            {
+            for (std::vector<Node*>::iterator it = des.begin(); it != des.end(); it++)
+                {
+                std::vector<std::string> desNames = (*it)->getTaxonBipartition();
+                for (std::vector<std::string>::iterator it2 = desNames.begin(); it2 != desNames.end(); it2++)
+                    p->addTaxonToBipartition(*it2);
+                }
+            }
+        }
+}
+
 void Tree::passDown(Node* p) {
 
     if (p != NULL)
@@ -264,7 +343,7 @@ void Tree::passDown(Node* p) {
         for (std::vector<Node*>::iterator it = ndeDescendants.begin(); it != ndeDescendants.end(); it++)
             passDown(*it);
             
-            p->setIndex(downPassSequence.size());
+            p->setIndex((int)downPassSequence.size());
         downPassSequence.push_back(p);
         }
 }
@@ -311,10 +390,10 @@ void Tree::printTree(void) {
 void Tree::pruneToReconstructedProcess(void) {
     
     for (size_t i=0; i<nodes.size(); ++i)
-    {
+        {
         Node *curr_node = nodes[i];
         if ( curr_node->isExtinct() )
-        {
+            {
             // let's prune this one
             
             // get the parent node
@@ -323,12 +402,12 @@ void Tree::pruneToReconstructedProcess(void) {
             
             // the ancestor might be
             if ( anc->getNumDescendants() > 1 )
-            {
+                {
                 sibling = anc->getDescendant( 0 );
                 if ( sibling == curr_node )
-                {
+                    {
                     sibling = anc->getDescendant( 1 );
-                }
+                    }
                 
                 Node *great_anc = anc->getAncestor();
                 great_anc->removeDescendant(anc);
@@ -339,24 +418,20 @@ void Tree::pruneToReconstructedProcess(void) {
                 // remove the nodes from the list
                 nodes.erase( nodes.begin() + i );
                 nodes.erase(std::remove(nodes.begin(), nodes.end(), anc), nodes.end());
-                
-            }
+                }
             else
-            {
+                {
                 // just remove this node
                 anc->removeDescendant(curr_node);
                 
                 // remove the nodes from the list
                 nodes.erase( nodes.begin() + i );
-            }
+                }
             
             // this is not efficient but for safety
-            i=0;
+            i = 0;
+            }
         }
-        
-    }
-    
-        
 }
 
 Node* Tree::randomlyChosenNodeFromSet(std::set<Node*>& s) {
@@ -379,6 +454,10 @@ void Tree::showTree(Node* p, int indent) {
         std::vector<Node*> ndeDescendants = p->getDescendants();
 		for (int i=0; i<indent; i++)
 			std::cout << " ";
+        if (p->getIsInReconstructedTree() == true)
+            std::cout << "R";
+        else
+            std::cout << " ";
         std::cout << p->getIndex();
         std::cout << " ( ";
         for (std::vector<Node*>::iterator it = ndeDescendants.begin(); it != ndeDescendants.end(); it++)
@@ -387,7 +466,8 @@ void Tree::showTree(Node* p, int indent) {
         if (p->getNumDescendants() == 0 || p->getNumDescendants() == 1)
             std::cout << " (" << p->getName() << ") ";
 		if (p == root)
-			std::cout << " <- Root";
+			std::cout << " <- Root ";
+            
         std::cout << std::endl;
         for (std::vector<Node*>::iterator it = ndeDescendants.begin(); it != ndeDescendants.end(); it++)
             showTree(*it, indent+2);

@@ -23,7 +23,9 @@ class Tree {
         bool                isFossilTaxon(Node* p);
         bool                isRoot(Node* p) { return (p == root); }
         int                 lengthOfLongestName(void);
+        void                listCalibrations(void);
         void                printTree(void);
+        void                markReconstructedTree(void);
     
     private:
         Node*               addNode(void);

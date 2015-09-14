@@ -13,11 +13,10 @@ int main (int argc, char* argv[]) {
     Settings mySettings(argc, argv);
     
     // instantiate the random number generator
-    MbRandom myRandom;
+    MbRandom myRandom(11);
     
     for (int i = 0; i<mySettings.getNumReplicates(); i++)
         {
-    
         // generate the tree
         Tree myTree(&myRandom,
                     mySettings.getSpeciationRate(),
@@ -25,8 +24,8 @@ int main (int argc, char* argv[]) {
                     mySettings.getFossilizationRate(),
                     mySettings.getNumLivingTaxa(),
                     10.0);
-            
         myTree.printTree();
+        myTree.listCalibrations();
             
         std::stringstream ss_tree;
         ss_tree << mySettings.getOutputFileName() << "." << i << ".tree";
@@ -37,7 +36,6 @@ int main (int argc, char* argv[]) {
         treeFileStream.close();
         
         // simulate data
-            
         std::stringstream ss_morph;
         ss_morph << mySettings.getOutputFileName() << ".morph." << i << ".nex";
         std::string morphfile =  ss_morph.str();
@@ -64,7 +62,6 @@ int main (int argc, char* argv[]) {
                              mySettings.getStationaryFrequenciesParameters(),
                              mySettings.getGammaShapeParameter());
         myMolecularData.printNexus(molFileStream,false,true);
-        
         }
     
     return 0;
