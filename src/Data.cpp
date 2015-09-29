@@ -93,9 +93,12 @@ void Data::print(bool isMorph) {
                     {
                     std::cout << dataMatrix[p->getIndex()][c];
                     }
-                    else
+                else
                     {
-                    std::cout << convertToDNA(dataMatrix[p->getIndex()][c]);
+                    if (s[0] == 'F')
+                        std::cout << "?";
+                    else
+                        std::cout << convertToDNA(dataMatrix[p->getIndex()][c]);
                     }
                 }
             std::cout << std::endl;
@@ -136,62 +139,61 @@ void Data::printNexus(std::iostream &outStream, bool isMorph, bool includeFossil
     
     int ntaxa = 0;
     for (int n=0; n<treePtr->getNumberOfDownPassNodes(); n++)
-    {
+        {
         Node* p = treePtr->getDownPassNode(n);
         if ( treePtr->isExtantTaxon(p) == true || (includeFossils == true && treePtr->isFossilTaxon(p) == true ) )
-        {
+            {
             ++ntaxa;
+            }
         }
-    }
     
-    outStream << "#NEXUS" << std::endl;
+    outStream << "#NEXUS" << std::endl << std::endl;
     outStream << "begin data;" << std::endl;
-    outStream << "dimensions ntax=" << ntaxa << " nchar=" << numChar << ";" << std::endl;
+    outStream << "   dimensions ntax=" << ntaxa << " nchar=" << numChar << ";" << std::endl;
     if ( isMorph == true )
-    {
-        outStream << "format datatype=Standard" << " missing=?"<< ";" << std::endl;
-    }
+        {
+        outStream << "   format datatype=Standard" << " missing=?"<< ";" << std::endl;
+        }
     else
-    {
-        outStream << "format datatype=DNA" << " missing=?"<< ";" << std::endl;
-    }
+        {
+        outStream << "   format datatype=DNA" << " missing=?"<< ";" << std::endl;
+        }
     
     
-    outStream << "MATRIX" << std::endl;
+    outStream << "   matrix" << std::endl;
     
     int maxLen = treePtr->lengthOfLongestName();
     for (int n=0; n<treePtr->getNumberOfDownPassNodes(); n++)
-    {
+        {
         Node* p = treePtr->getDownPassNode(n);
         if ( treePtr->isExtantTaxon(p) == true || (includeFossils == true && treePtr->isFossilTaxon(p) == true ) )
-        {
+            {
             std::string s = p->getName();
-            outStream << s << "   ";
+            outStream << "   " << s << "   ";
             for (int i=0; i<maxLen-s.length(); i++)
                 outStream << " ";
             for (int c=0; c<numChar; c++)
-            {
+                {
                 if ( isMorph == true )
-                {
+                    {
                     outStream << dataMatrix[p->getIndex()][c];
-                }
+                    }
                 else
-                {
+                    {
                     if ( treePtr->isFossilTaxon(p) == true )
-                    {
+                        {
                         outStream << "?";
-                    }
+                        }
                     else
-                    {
+                        {
                         outStream << convertToDNA(dataMatrix[p->getIndex()][c]);
+                        }
                     }
                 }
-            }
             outStream << std::endl;
+            }
         }
-    }
-    outStream << ";" << std::endl;
-    
+    outStream << "   ;" << std::endl;
     outStream << "end;" << std::endl;
 }
 

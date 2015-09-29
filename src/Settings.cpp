@@ -19,15 +19,15 @@ Settings::Settings(int argc, char *argv[]) {
 	cmdString[ 5] = (char*)"-phi";
 	cmdString[ 6] = (char*)"0.1";
 	cmdString[ 7] = (char*)"-out";
-    cmdString[ 8] = (char*)"./test";
+    cmdString[ 8] = (char*)"/Users/johnh/Desktop/LondonSimulations/data/test";
     cmdString[ 9] = (char*)"-nr";
     cmdString[10] = (char*)"1";
 	cmdString[11] = (char*)"-nt";
 	cmdString[12] = (char*)"20";
     cmdString[13] = (char*)"-bf";
-	cmdString[14] = (char*)"(0.4, 0.3, 0.2, 0.1)";
+	cmdString[14] = (char*)"(0.25, 0.25, 0.25, 0.25)";
     cmdString[15] = (char*)"-exch";
-	cmdString[16] = (char*)"(1.0, 2.0, 1.0, 1.0, 2.0, 1.0)";
+	cmdString[16] = (char*)"(1.0, 1.0, 1.0, 1.0, 1.0, 1.0)";
 	argc = 17;
 	argv = cmdString;
 #	endif

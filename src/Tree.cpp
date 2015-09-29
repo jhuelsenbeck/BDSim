@@ -1,6 +1,7 @@
 #include <iomanip>
 #include <iostream>
 #include <set>
+#include "FossilCalibration.h"
 #include "MbRandom.h"
 #include "Node.h"
 #include "Tree.h"
@@ -25,6 +26,7 @@ Tree::Tree(MbRandom* rp, double l, double m, double p, int n, double t, bool r) 
         initializeDownPassSequence();
         }
     markReconstructedTree();
+    initializeCalibrations();
 }
 
 Tree::Tree(Tree& t) {
@@ -119,7 +121,7 @@ void Tree::buildBirthDeathTree(void) {
             extantTaxa.push_back(*it);
             }
         std::cout << "Number of nodes = " << nodes.size() << " Number of extant taxa = " << activeNodes.size() << " Duration = " << duration << std::endl;
-        if (activeNodes.size() != numLivingTaxa || (mrcaOfExtantTaxa() != root))
+        if ( (activeNodes.size() != numLivingTaxa) || (mrcaOfExtantTaxa() != root) || fossilTaxa.size() == 0 )
             {
             clearTree();
             activeNodes.clear();
@@ -219,6 +221,28 @@ std::string Tree::getNewick(void) {
 	return newick;
 }
 
+void Tree::initializeCalibrations(void) {
+
+    for (std::vector<Node*>::iterator it=nodes.begin(); it != nodes.end(); it++)
+        {
+        if ((*it)->isFossil() == true)
+            {
+            FossilCalibration* fc = new FossilCalibration;
+            calibrations.push_back(fc);
+            
+            Node* p = (*it);
+            while (p->getIsInReconstructedTree() == false && p != root)
+                p = p->getAncestor();
+            
+            fc->setFossilName( (*it)->getName() );
+            fc->setTime( (*it)->getTime() );
+            std::vector<std::string> desNames = p->getTaxonBipartition();
+            for (std::vector<std::string>::iterator it2 = desNames.begin(); it2 != desNames.end(); it2++)
+                fc->addTaxonToClade(*it2);
+            }
+        }
+}
+
 void Tree::initializeDownPassSequence(void) {
 
     downPassSequence.clear();
@@ -279,8 +303,27 @@ void Tree::listCalibrations(void) {
             std::cout << ") ";
             std::cout << std::endl;
             }
+        }    for (std::vector<Node*>::iterator it=nodes.begin(); it != nodes.end(); it++)
+        {
+        if ((*it)->isFossil() == true)
+            {
+            Node* p = (*it);
+            while (p->getIsInReconstructedTree() == false && p != root)
+                p = p->getAncestor();
+            
+            
+            std::cout << (*it)->getName() << " ";
+            std::cout << (*it)->getIndex() << " ";
+            std::cout << (*it)->getTime() << " ";
+            std::cout << "Calibrates node " << p->getIndex() << " ";
+            std::vector<std::string> desNames = p->getTaxonBipartition();
+            std::cout << "( ";
+            for (std::vector<std::string>::iterator it2 = desNames.begin(); it2 != desNames.end(); it2++)
+                std::cout << *it2 << " ";
+            std::cout << ") ";
+            std::cout << std::endl;
+            }
         }
-
 
 }
 
