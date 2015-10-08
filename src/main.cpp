@@ -3,10 +3,12 @@
 #include "Data.h"
 #include "FossilCalibration.h"
 #include "MbRandom.h"
+#include "Node.h"
 #include "Settings.h"
 #include "Tree.h"
 
 void printCtlFile(std::fstream& ss, int rep, Settings& ms, Tree& t);
+void printCtlFileSSBDP(std::fstream& ss, int rep, Settings& ms, Tree& t);
 
 
 
@@ -35,7 +37,32 @@ int main (int argc, char* argv[]) {
         std::string treefile =  ss_tree.str();
         std::fstream treeFileStream;
         treeFileStream.open( treefile.c_str(), std::fstream::out);
-        treeFileStream << myTree.getNewick() << std::endl;
+        treeFileStream << "#NEXUS" << std::endl << std::endl;
+
+        treeFileStream << "begin taxa;" << std::endl;
+        int n = 0;
+        for (int j=0; j<myTree.getNumberOfDownPassNodes(); j++)
+            {
+            Node* p = myTree.getDownPassNode(j);
+            if (myTree.isExtantTaxon(p) == true || myTree.isFossilTaxon(p) == true)
+                n++;
+            }
+        treeFileStream << "   dimensions ntax=" << n << ";" << std::endl;
+        treeFileStream << "   taxlabels" << std::endl;
+        for (int j=0; j<myTree.getNumberOfDownPassNodes(); j++)
+            {
+            Node* p = myTree.getDownPassNode(j);
+            if (myTree.isExtantTaxon(p) == true || myTree.isFossilTaxon(p) == true)
+                {
+                treeFileStream << "   " << p->getName() << std::endl;
+                }
+            }
+        treeFileStream << "   ;" << std::endl;
+        treeFileStream << "end;" << std::endl;
+        
+        treeFileStream << "begin trees;" << std::endl;
+        treeFileStream << "   tree true_tree = [&R] " << myTree.getNewick() << ";" << std::endl;
+        treeFileStream << "end;" << std::endl << std::endl;
         treeFileStream.close();
         
         // simulate data
@@ -74,7 +101,7 @@ int main (int argc, char* argv[]) {
         std::string rbCtlfile =  rbCtlStrStrm.str();
         std::fstream rbCtlStrm;
         rbCtlStrm.open( rbCtlfile.c_str(), std::fstream::out);
-        printCtlFile(rbCtlStrm, i, mySettings, myTree);
+        printCtlFileSSBDP(rbCtlStrm, i, mySettings, myTree);
         rbCtlStrm.close();
         }
     
@@ -96,8 +123,8 @@ void printCtlFile(std::fstream& ss, int rep, Settings& ms, Tree& t) {
 
     ss << std::endl;
     ss << "# read data" << std::endl;
-    ss << "D1 <- readDiscreteCharacterData(file=\")" << molfile <<   "\");" << std::endl;
-    ss << "D2 <- readDiscreteCharacterData(file=\")" << morphfile << "\");" << std::endl;
+    ss << "D1 <- readDiscreteCharacterData(file=\"" << molfile <<   "\");" << std::endl;
+    ss << "D2 <- readDiscreteCharacterData(file=\"" << morphfile << "\");" << std::endl;
     ss << "n_mol_sites <- D1.nchar();" << std::endl;
     ss << "n_morph_sites <- D2.nchar();" << std::endl << std::endl;
 
@@ -226,4 +253,156 @@ void printCtlFile(std::fstream& ss, int rep, Settings& ms, Tree& t) {
     ## quit ##
     #q()
 #endif
+
+
+}
+
+void printCtlFileSSBDP(std::fstream& ss, int rep, Settings& ms, Tree& t) {
+
+    // get file names
+    std::stringstream ss_mol;
+    ss_mol << ms.getOutputFileName() << ".mol." << rep+1 << ".nex";
+    std::string molfile = ss_mol.str();
+    std::stringstream ss_morph;
+    ss_morph << ms.getOutputFileName() << ".morph." << rep+1 << ".nex";
+    std::string morphfile = ss_morph.str();
+    std::stringstream ss_tree;
+    ss_tree << ms.getOutputFileName() << "." << rep+1 << ".tree";
+    std::string treefile = ss_tree.str();
+
+    ss << "mi = 0;" << std::endl;
+    ss << "D_mol <- readDiscreteCharacterData(file=\"" << molfile <<   "\");" << std::endl;
+    ss << "D_morph <- readDiscreteCharacterData(file=\"" << morphfile << "\");" << std::endl;
+    ss << "starting_tree <- readTrees(\"" << treefile << "\")[1];" << std::endl;
+    ss << "taxon_names <- D_mol.names();" << std::endl << std::endl;
+
+    ss << "##############" << std::endl;
+    ss << "# Tree model #" << std::endl;
+    ss << "##############" << std::endl << std::endl;
+
+    ss << "# Specify a prior on the diversification and turnover rate" << std::endl;
+    ss << "diversification ~ dnGamma(5,1);" << std::endl;
+    ss << "turnover ~ dnGamma(5,1);" << std::endl << std::endl;
+
+    ss << "# now transform the diversification and turnover rates into speciation and extinction rates" << std::endl;
+    ss << "speciation := diversification + turnover;" << std::endl;
+    ss << "extinction := turnover;" << std::endl << std::endl;
+
+    ss << "### root age ###" << std::endl;
+    ss << "## Uniform prior on root age" << std::endl;
+    ss << "root_age ~ dnUnif(0.0, 100.0);" << std::endl;
+    ss << "root_age.setValue(20.0);" << std::endl << std::endl;
+
+    ss << "## The sampling-through-time parameter" << std::endl;
+    ss << "fossil_rate <- 0.1;" << std::endl << std::endl;
+
+    ss << "## The probability of sampling at the present (rho)" << std::endl;
+    ss << "## (this is still in a vector, with a single element as required by the model fxn)" << std::endl;
+    ss << "## We use a strongly informative prior with an expected value of rho that is very small" << std::endl;
+    ss << "###sampling_prob ~ dnBeta(1.0, 9999.0)" << std::endl;
+    ss << "sampling_prob <- 1;" << std::endl << std::endl;
+
+    ss << "## the Birth-death distribution ##" << std::endl;
+    ss << "psi ~ dnBDPSerial(rootAge=root_age, lambda=speciation, mu=extinction, psi=fossil_rate, rho=sampling_prob, timeSinceLastSample=0, condition=\"time\", names=taxon_names);" << std::endl << std::endl;
+
+    ss << "## Specify a stable starting tree" << std::endl;
+    ss << "psi.setValue(starting_tree);" << std::endl << std::endl;
+
+    ss << "# create some moves that change the stochastic variables" << std::endl;
+    ss << "# all moves are sliding proposals but you could use scaling proposals for the rates too" << std::endl;
+    ss << "moves[++mi] = mvSlide(diversification,delta=1,tune=true,weight=1);" << std::endl;
+    ss << "moves[++mi] = mvSlide(turnover,delta=1,tune=true,weight=1);" << std::endl;
+    ss << "moves[++mi] = mvSlide(root_age,delta=1,tune=true,weight=1);" << std::endl;
+
+    ss << "moves[++mi] = mvNarrow(psi, weight=5.0);" << std::endl;
+    ss << "moves[++mi] = mvNNI(psi, weight=1.0);" << std::endl;
+    ss << "moves[++mi] = mvFNPR(psi, weight=3.0);" << std::endl;
+    ss << "moves[++mi] = mvSubtreeScale(psi, weight=3.0);" << std::endl;
+    ss << "moves[++mi] = mvNodeTimeSlideUniform(psi, weight=15.0);" << std::endl;
+
+    ss << "################################" << std::endl;
+    ss << "# Molecular Substitution Model #" << std::endl;
+    ss << "################################" << std::endl << std::endl;
+
+    ss << "# substitution model priors" << std::endl;
+    ss << "bf <- v(1,1,1,1);" << std::endl;
+    ss << "e <- v(1,1,1,1,1,1);" << std::endl;
+    ss << "pi ~ dnDirichlet(bf);" << std::endl;
+    ss << "er ~ dnDirichlet(e);" << std::endl << std::endl;
+
+    ss << "# moves on the substitution process parameters" << std::endl;
+    ss << "# first some moves only changing one value of the simplex" << std::endl;
+    ss << "moves[++mi] = mvSimplexElementScale(pi, alpha=10.0, tune=true, weight=2.0);" << std::endl;
+    ss << "moves[++mi] = mvSimplexElementScale(er, alpha=10.0, tune=true, weight=3.0);" << std::endl << std::endl;
+
+    ss << "# the rate matrix" << std::endl;
+    ss << "Q_mol := fnGTR(er,pi);" << std::endl << std::endl;
+
+    ss << "####################################" << std::endl;
+    ss << "# Morphological Substitution Model #" << std::endl;
+    ss << "####################################" << std::endl << std::endl;
+
+    ss << "# the rate matrix" << std::endl;
+    ss << "Q_morph <- fnJC(2);" << std::endl << std::endl;
+
+    ss << "#############################" << std::endl;
+    ss << "# Among Site Rate Variation #" << std::endl;
+    ss << "#############################" << std::endl << std::endl;
+
+    ss << "alpha_prior <- 0.05;" << std::endl;
+    ss << "alpha ~ dnExponential( alpha_prior );" << std::endl;
+    ss << "gamma_rates := fnDiscretizeGamma( alpha, alpha, 4, false );" << std::endl << std::endl;
+
+    ss << "# add moves for the stationary frequencies, exchangeability rates and the shape parameter" << std::endl;
+    ss << "moves[++mi] = mvScale(alpha,weight=2);" << std::endl << std::endl;
+
+    ss << "#############################" << std::endl;
+    ss << "# Strict global clock model #" << std::endl;
+    ss << "#############################" << std::endl << std::endl;
+
+    ss << "log_mol_clock_rate ~ dnUniform(-10,2);" << std::endl;
+    ss << "mol_clock_rate := 10^log_mol_clock_rate;" << std::endl;
+
+    ss << "moves[++mi] = mvSlide(log_mol_clock_rate, weight=1.0);" << std::endl;
+
+    ss << "log_morph_clock_rate ~ dnUniform(-10,2);" << std::endl;
+    ss << "morph_clock_rate := 10^log_morph_clock_rate;" << std::endl;
+
+    ss << "moves[++mi] = mvSlide(log_morph_clock_rate, weight=1.0);" << std::endl << std::endl;
+
+    ss << "###################" << std::endl;
+    ss << "# PhyloCTMC Model #" << std::endl;
+    ss << "###################" << std::endl << std::endl;
+
+    ss << "seq_mol ~ dnPhyloCTMC(tree=psi, Q=Q_mol, branchRates=mol_clock_rate, siteRates=gamma_rates, type=\"DNA\");" << std::endl;
+    ss << "seq_morph ~ dnPhyloCTMC(tree=psi, Q=Q_morph, branchRates=morph_clock_rate, type=\"Standard\");" << std::endl << std::endl;
+
+    ss << "# attach the data" << std::endl;
+    ss << "seq_mol.clamp(D_mol);" << std::endl;
+    ss << "seq_morph.clamp(D_morph);" << std::endl << std::endl;
+
+    ss << "mymodel = model(bf);" << std::endl;
+
+    ss << "monitor_index = 0;" << std::endl;
+    ss << "monitors[++monitor_index] = mnModel(filename=\"output/SerialSampled_BDP.log\",printgen=10, separator = TAB);" << std::endl;
+    ss << "monitors[++monitor_index] = mnFile(filename=\"output/SerialSampled_BDP.trees\",printgen=10, separator = TAB, psi);" << std::endl;
+    ss << "monitors[++monitor_index] = mnScreen(printgen=1000, mol_clock_rate, morph_clock_rate, root_age);" << std::endl;
+
+    ss << "mymcmc = mcmc(mymodel, monitors, moves);" << std::endl;
+
+    ss << "mymcmc.burnin(generations=10000,250);" << std::endl;
+    ss << "mymcmc.run(generations=30000);" << std::endl;
+
+
+    ss << "# Now, we will analyze the tree output." << std::endl;
+    ss << "# Let us start by reading in the tree trace" << std::endl;
+    ss << "treetrace = readTreeTrace(\"output/SerialSampled_BDP.trees\", treetype=\"clock\");" << std::endl;
+    ss << "# and get the summary of the tree trace" << std::endl;
+    ss << "#treetrace.summarize()" << std::endl;
+
+    ss << "map_tree = mapTree(treetrace,\"output/SerialSampled_BDP.tree\");" << std::endl << std::endl;
+
+    ss << "# you may want to quit RevBayes now" << std::endl;
+    ss << "q();" << std::endl;
+
 }

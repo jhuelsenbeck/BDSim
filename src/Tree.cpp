@@ -145,7 +145,26 @@ void Tree::buildBirthDeathTree(void) {
         sprintf(cStr, "Fossil_%lu", i+1);
         std::string cppStr = cStr;
         fossilTaxa[i]->setName(cppStr);
+        if (fossilTaxa[i]->getNumDescendants() == 1)
+            {
+            Node* p = fossilTaxa[i];
+            Node* pAnc = p->getAncestor();
+            Node* d1 = p->getDescendant(0);
+            Node* na = addNode();
+            na->setAncestor(pAnc);
+            na->addDescendant(d1);
+            na->addDescendant(p);
+            p->setAncestor(na);
+            d1->setAncestor(na);
+            p->removeDescendants();
+            pAnc->removeDescendant(p);
+            pAnc->addDescendant(na);
+            
+            na->setTime(p->getTime());
+            p->setTime(p->getTime()+0.0000000);
+            }
         }
+    initializeDownPassSequence();
 }
 
 void Tree::clearTree(void) {
