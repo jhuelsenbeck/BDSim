@@ -569,6 +569,58 @@ void Tree::writeTree(Node* p, std::stringstream& ss) {
 }
 
 
+void Tree::removeFossils( void )
+{
+    for (size_t i=0; i<nodes.size(); ++i)
+    {
+        Node *curr_node = nodes[i];
+        if ( curr_node->isFossil() )
+        {
+            // let's prune this one
+            
+            // get the parent node
+            Node *anc = curr_node->getAncestor();
+            Node *sibling = NULL;
+            
+            // the ancestor might be
+            if ( anc->getNumDescendants() > 1 )
+            {
+                sibling = anc->getDescendant( 0 );
+                if ( sibling == curr_node )
+                {
+                    sibling = anc->getDescendant( 1 );
+                }
+                
+                Node *great_anc = anc->getAncestor();
+                great_anc->removeDescendant(anc);
+                
+                great_anc->addDescendant( sibling );
+                sibling->setAncestor( great_anc );
+                
+                // remove the nodes from the list
+                nodes.erase( nodes.begin() + i );
+                nodes.erase(std::remove(nodes.begin(), nodes.end(), anc), nodes.end());
+            }
+            else
+            {
+                // just remove this node
+                anc->removeDescendant(curr_node);
+                
+                // remove the nodes from the list
+                nodes.erase( nodes.begin() + i );
+            }
+            
+            // this is not efficient but for safety
+            i = 0;
+        }
+        
+    }
+    
+    initializeDownPassSequence();
+    
+}
+
+
 
 
 

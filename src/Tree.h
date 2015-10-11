@@ -29,6 +29,7 @@ class Tree {
         void                            listCalibrations(void);
         void                            printTree(void);
         void                            markReconstructedTree(void);
+        void                            removeFossils(void);
     
     private:
         Node*                           addNode(void);

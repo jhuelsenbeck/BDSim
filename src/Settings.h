@@ -18,7 +18,9 @@ class Settings {
         int                 getNumMolecularCharacters(void) { return numMolecularCharacters; }
         int                 getNumMorphologicalCharacters(void) { return numMorphologicalCharacters; }
         int                 getNumReplicates(void) { return numReplicates; }
-        std::string         getOutputFileName(void) { return outputFileName; }
+        std::string         getFileName(void) { return outputFileName; }
+        std::string         getFilePath(void) { return outputFilePath; }
+        std::string         getFullFileName(void) { return outputFilePath + "/" + outputFileName; }
         std::vector<double> getStationaryFrequenciesParameters(void) { return stationaryFrequenciesParameters; }
         void                print(void);
         void                setSpeciationRate(double x) { speciationRate = x; }
@@ -30,12 +32,14 @@ class Settings {
         void                setNumMolecularCharacters(int x) { numMolecularCharacters = x; }
         void                setNumMorphologicalCharacters(int x) { numMorphologicalCharacters = x; }
         void                setOutputFileName(std::string s) { outputFileName = s; }
+        void                setOutputFilePath(std::string s) { outputFilePath = s; }
         void                setStationaryFrequenciesParameters(std::vector<double> x) { stationaryFrequenciesParameters = x; }
 
     private:
         void                preprocessStr(int* argc, char *argv[]);
         void                printUsage(void);
         std::string         outputFileName;
+        std::string         outputFilePath;
         double              speciationRate;
         double              extinctionRate;
         double              fossilizationRate;
@@ -47,6 +51,8 @@ class Settings {
         std::vector<double> stationaryFrequenciesParameters;
         std::vector< std::vector<double> >  tempVectors;
         int                 numReplicates;
+
+        std::vector<std::string> cmds;
 };
 
 
