@@ -110,7 +110,7 @@ void RevScript::print( void )
     printMcmc( rbCtlStrm );
     
     // summarize trees
-    printSummarizeTrees( rbCtlStrm );
+    //printSummarizeTrees( rbCtlStrm );
     
     // quit
     printQuit( rbCtlStrm );

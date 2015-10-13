@@ -22,6 +22,7 @@ class Tree {
         int                             getNumberOfNodes(void) { return (int)nodes.size(); }
         int                             getNumberOfCalibrations(void) { return (int)calibrations.size(); }
         FossilCalibration*              getCalibrationIndexed(int idx) { return calibrations[idx]; }
+        int                             getNumFossils(void) { return (int)fossilTaxa.size(); }
         bool                            isExtantTaxon(Node* p);
         bool                            isFossilTaxon(Node* p);
         bool                            isRoot(Node* p) { return (p == root); }
