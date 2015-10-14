@@ -4,6 +4,7 @@
 
 FossilCalibration::FossilCalibration(void) {
 
-    fossilName = "";
-    time = 0.0;
+    fossilName  = "";
+    fossilTime  = 0.0;
+    nodeTime    = 0.0;
 }

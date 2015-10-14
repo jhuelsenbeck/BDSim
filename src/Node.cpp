@@ -29,6 +29,36 @@ int Node::getNumDescendants(void) {
     return (int)descendants.size();
 }
 
+
+double Node::getReconstructedTime( void )
+{
+    if ( fossil == true || extinct == true
+        )
+    {
+        return ancestor->getReconstructedTime();
+    }
+    
+    bool reconstructed = true;
+    for (size_t i=0; i < descendants.size(); ++i)
+    {
+        if ( descendants[i]->isExtinct() == true || descendants[i]->isFossil() == true
+            )
+        {
+            reconstructed = false;
+            break;
+        }
+    }
+    
+    if ( reconstructed == false )
+    {
+        return ancestor->getReconstructedTime();
+    }
+    
+    
+    return time;
+}
+
+
 void Node::removeDescendant(Node* d)
 {
     

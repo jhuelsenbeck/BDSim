@@ -7,12 +7,13 @@
 #include <fstream>
 
 
-RevScript::RevScript(const std::string &pa, const std::string &f, int r, Tree *t, TREE_PRIOR p, bool mo) :
+RevScript::RevScript(const std::string &pa, const std::string &f, int r, Tree *t, TREE_PRIOR p, CALIBRATION cal, bool mo) :
     base_file_name( f ),
     base_file_path( pa ),
     rep( r ),
     tree( t ),
     prior( p ),
+    calib( cal ),
     clock( STRICT ),
     mol_only( mo )
 {
@@ -31,6 +32,11 @@ void RevScript::print( void )
     if ( prior == BDP )
     {
         rbCtlStrStrm << "BDP.";
+        
+        if ( calib == NODE )
+        {
+            rbCtlStrStrm << "perfect.";
+        }
     }
     else
     {
@@ -141,40 +147,49 @@ void RevScript::printBDP( std::ostream &out )
     out << std::endl;
     out << "root_age ~ dnUniform(0, 1000)" << std::endl;
     
+    std::map<std::string, double> fossil_calibrations;
     for (int i=0; i<tree->getNumberOfCalibrations(); i++)
     {
         FossilCalibration* fc = tree->getCalibrationIndexed(i);
-        out << "clade_" << i+1 << " <- clade(";
+        std::string clade = "";
         for (int j=0; j<fc->getNumTaxaInClade(); j++)
         {
-            out << "\"" << fc->getCladeTaxonIndexed(j) << "\"";
+            clade += "\"" + fc->getCladeTaxonIndexed(j) + "\"";
             if (j+1 != fc->getNumTaxaInClade())
-                out << ",";
+                clade += ",";
         }
-        out << ")" << std::endl;
+        std::map<std::string, double>::iterator it = fossil_calibrations.find( clade );
+        if ( it != fossil_calibrations.end() )
+        {
+            it->second = ( it->second < fc->getFossilTime() ? it->second : fc->getFossilTime() );
+        }
+        else
+        {
+            double time = 0.0;
+            if ( calib == FOSSIL )
+            {
+                time = fc->getFossilTime()-10;
+            }
+            else
+            {
+                time = fc->getNodeTime()-10;
+            }
+            
+            fossil_calibrations.insert( std::pair<std::string, double>( clade, time ) );
+        }
     }
-//    std::map<std::string, double> fossil_calibrations;
-//    for (int i=0; i<tree->getNumberOfCalibrations(); i++)
-//    {
-//        FossilCalibration* fc = tree->getCalibrationIndexed(i);
-//        std::string clade = "";
-//        for (int j=0; j<fc->getNumTaxaInClade(); j++)
-//        {
-//            clade += "\"" + fc->getCladeTaxonIndexed(j) + "\"";
-//            if (j+1 != fc->getNumTaxaInClade())
-//                clade += ",";
-//        }
-//        std::map<std::string, double>::iterator it = fossil_calibrations.find( clade );
-//        if ( it != fossil_calibrations.end() )
-//        {
-//            
-//        }
-//    }
-    out << "constraints <- v(";
-    for (int i=0; i<tree->getNumberOfCalibrations(); i++)
+    size_t i = 1;
+    for (std::map<std::string, double>::iterator it=fossil_calibrations.begin(); it!=fossil_calibrations.end(); ++it)
     {
-        out << "clade_" << i+1;
-        if (i+1 != tree->getNumberOfCalibrations())
+        out << "clade_" << i << " <- clade(" << it->first << ")" << std::endl;
+        
+        ++i;
+    }
+    out << "constraints <- v(";
+    for (int j=0; j<fossil_calibrations.size(); j++)
+    {
+        out << "clade_" << j+1;
+        if (j+1 != fossil_calibrations.size())
             out << ",";
     }
     out << ")" << std::endl;
@@ -184,22 +199,39 @@ void RevScript::printBDP( std::ostream &out )
     out << std::endl;
     
 
-    out << "fossil_calib_rate ~ dnExponential(1.0)" << std::endl;
-    out << std::endl;
-    
-    for (int i=0; i<tree->getNumberOfCalibrations(); i++)
+    if ( calib == FOSSIL )
     {
-        FossilCalibration* fc = tree->getCalibrationIndexed(i);
-        out << "tmrca_clade_" << i+1 << " := tmrca(psi, clade_" << i+1 << ")" << std::endl;
-        out << "fossil_age_" << i+1 << " ~ dnExponential(fossil_calib_rate, offset=-tmrca_clade_" << i+1 << ")" << std::endl;
-        out << "fossil_age_" << i+1 << ".clamp( -(10.0-" << fc->getTime() << ") )" << std::endl;
+        out << "fossil_calib_rate ~ dnExponential(1.0)" << std::endl;
+        out << std::endl;
+    }
+    
+    i = 1;
+    for (std::map<std::string, double>::iterator it=fossil_calibrations.begin(); it!=fossil_calibrations.end(); ++it)
+    {
+        out << "tmrca_clade_" << i << " := tmrca(psi, clade_" << i << ")" << std::endl;
+        
+        if ( calib == FOSSIL )
+        {
+            out << "fossil_age_" << i << " ~ dnExponential(fossil_calib_rate, offset=-tmrca_clade_" << i << ")" << std::endl;
+            out << "fossil_age_" << i << ".clamp( " << it->second << " )" << std::endl;
+        }
+        else
+        {
+            out << "fossil_age_" << i << " ~ dnNormal(-tmrca_clade_" << i << ", sd=1.0)" << std::endl;
+            out << "fossil_age_" << i << ".clamp( " << it->second << " )" << std::endl;
+
+        }
+        ++i;
     }
     
     out << std::endl;
     out << "moves[++mi] = mvScale(speciation,lambda=1.0,tune=true,weight=3.0)" << std::endl;
     out << "moves[++mi] = mvSlide(relative_extinction,delta=1.0,tune=true,weight=3.0)" << std::endl;
     out << "moves[++mi] = mvSlide(root_age,delta=1.0,tune=true,weight=3.0)" << std::endl;
-    out << "moves[++mi] = mvScale(fossil_calib_rate,lambda=1.0,tune=true,weight=3.0)" << std::endl;
+    if ( calib == FOSSIL )
+    {
+        out << "moves[++mi] = mvScale(fossil_calib_rate,lambda=1.0,tune=true,weight=3.0)" << std::endl;
+    }
     out << "moves[++mi] = mvSubtreeScale(psi, weight=3.0)" << std::endl;
     out << "moves[++mi] = mvNodeTimeSlideUniform(psi, weight=15.0)" << std::endl;
 
@@ -275,6 +307,10 @@ void RevScript::printMonitors( std::ostream &out )
     if ( prior == BDP )
     {
         mntr_strm << "BDP.";
+        if ( calib == NODE )
+        {
+            mntr_strm << "perfect.";
+        }
     }
     else
     {

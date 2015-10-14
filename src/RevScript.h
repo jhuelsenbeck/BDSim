@@ -21,9 +21,10 @@ class RevScript {
 
         enum TREE_PRIOR { BDP, FBDP };
         enum CLOCK_TYPE { STRICT, UCLN };
+        enum CALIBRATION { FOSSIL, NODE };
 
     
-        RevScript(const std::string &pa, const std::string &f, int r, Tree *t, TREE_PRIOR p, bool mo);
+        RevScript(const std::string &pa, const std::string &f, int r, Tree *t, TREE_PRIOR p, CALIBRATION cal, bool mo);
     
     
         void            print( void );
@@ -57,6 +58,7 @@ class RevScript {
         int             rep;
         Tree*           tree;
         TREE_PRIOR      prior;
+        CALIBRATION     calib;
         CLOCK_TYPE      clock;
         bool            mol_only;
 

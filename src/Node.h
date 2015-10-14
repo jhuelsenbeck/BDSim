@@ -17,6 +17,7 @@ class Node {
         int                         getIndex(void) { return index; }
         std::string                 getName(void) { return name; }
         int                         getNumDescendants(void);
+        double                      getReconstructedTime();
         double                      getTime(void) { return time; }
         std::vector<std::string>&   getTaxonBipartition(void) { return taxonBipartition; }
         bool                        isExtinct(void) const { return extinct; }

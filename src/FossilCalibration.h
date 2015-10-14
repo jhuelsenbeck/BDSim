@@ -12,13 +12,16 @@ class FossilCalibration {
         std::string                 getFossilName(void) { return fossilName; }
         int                         getNumTaxaInClade(void) { return (int)cladeNames.size(); }
         std::string                 getCladeTaxonIndexed(int idx) { return cladeNames[idx]; }
-        double                      getTime(void) { return time; }
+        double                      getFossilTime(void) { return fossilTime; }
+        double                      getNodeTime(void) { return nodeTime; }
         void                        setFossilName(std::string s) { fossilName = s; }
-        void                        setTime(double x) { time = x; }
+        void                        setFossilTime(double x) { fossilTime = x; }
+        void                        setNodeTime(double x) { nodeTime = x; }
 
     private:
         std::string                 fossilName;
-        double                      time;
+        double                      fossilTime;
+        double                      nodeTime;
         std::vector<std::string>    cladeNames;
 };
 

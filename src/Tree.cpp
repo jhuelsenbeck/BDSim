@@ -254,7 +254,8 @@ void Tree::initializeCalibrations(void) {
                 p = p->getAncestor();
             
             fc->setFossilName( (*it)->getName() );
-            fc->setTime( (*it)->getTime() );
+            fc->setFossilTime( (*it)->getTime() );
+            fc->setNodeTime( (*it)->getAncestor()->getReconstructedTime() );
             std::vector<std::string> desNames = p->getTaxonBipartition();
             for (std::vector<std::string>::iterator it2 = desNames.begin(); it2 != desNames.end(); it2++)
                 fc->addTaxonToClade(*it2);

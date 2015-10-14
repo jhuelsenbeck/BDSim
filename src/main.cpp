@@ -114,15 +114,18 @@ int main (int argc, char* argv[]) {
         molFileStream_extant.close();
         
         // print RevBayes control file
-        RevScript script_fbdp = RevScript( mySettings.getFilePath(), mySettings.getFileName(), i+1, &myTree, RevScript::FBDP, false );
+        RevScript script_fbdp = RevScript( mySettings.getFilePath(), mySettings.getFileName(), i+1, &myTree, RevScript::FBDP, RevScript::FOSSIL, false );
         script_fbdp.print();
             
-        RevScript script_fbdp_mol_only = RevScript( mySettings.getFilePath(), mySettings.getFileName(), i+1, &myTree, RevScript::FBDP, true );
+        RevScript script_fbdp_mol_only = RevScript( mySettings.getFilePath(), mySettings.getFileName(), i+1, &myTree, RevScript::FBDP, RevScript::FOSSIL, true );
         script_fbdp_mol_only.print();
             
-        RevScript script_bdp = RevScript( mySettings.getFilePath(), mySettings.getFileName(), i+1, &myTree, RevScript::BDP, false );
+        RevScript script_bdp = RevScript( mySettings.getFilePath(), mySettings.getFileName(), i+1, &myTree, RevScript::BDP, RevScript::FOSSIL, false );
         script_bdp.print();
         
+        RevScript script_bdp_perfect = RevScript( mySettings.getFilePath(), mySettings.getFileName(), i+1, &myTree, RevScript::BDP, RevScript::NODE, false );
+        script_bdp_perfect.print();
+            
 //        std::stringstream rbCtlStrStrm;
 //        rbCtlStrStrm << mySettings.getOutputFileName() << ".ctl." << i+1 << ".Rev";
 //        std::string rbCtlfile =  rbCtlStrStrm.str();
