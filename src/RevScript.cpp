@@ -2,6 +2,7 @@
 #include "RevScript.h"
 #include "Tree.h"
 
+#include <map>
 #include <sstream>
 #include <fstream>
 
@@ -138,9 +139,6 @@ void RevScript::printBDP( std::ostream &out )
     out << "extinction := speciation * relative_extinction" << std::endl;
     out << "sampling_prob <- 1.0" << std::endl;
     out << std::endl;
-    out << "moves[++mi] = mvScale(speciation,lambda=1.0,tune=true,weight=3.0)" << std::endl;
-    out << "moves[++mi] = mvSlide(relative_extinction,delta=1.0,tune=true,weight=3.0)" << std::endl;
-    out << std::endl;
     out << "root_age ~ dnUniform(0, 1000)" << std::endl;
     
     for (int i=0; i<tree->getNumberOfCalibrations(); i++)
@@ -155,6 +153,23 @@ void RevScript::printBDP( std::ostream &out )
         }
         out << ")" << std::endl;
     }
+//    std::map<std::string, double> fossil_calibrations;
+//    for (int i=0; i<tree->getNumberOfCalibrations(); i++)
+//    {
+//        FossilCalibration* fc = tree->getCalibrationIndexed(i);
+//        std::string clade = "";
+//        for (int j=0; j<fc->getNumTaxaInClade(); j++)
+//        {
+//            clade += "\"" + fc->getCladeTaxonIndexed(j) + "\"";
+//            if (j+1 != fc->getNumTaxaInClade())
+//                clade += ",";
+//        }
+//        std::map<std::string, double>::iterator it = fossil_calibrations.find( clade );
+//        if ( it != fossil_calibrations.end() )
+//        {
+//            
+//        }
+//    }
     out << "constraints <- v(";
     for (int i=0; i<tree->getNumberOfCalibrations(); i++)
     {
@@ -167,6 +182,27 @@ void RevScript::printBDP( std::ostream &out )
     out << "psi ~ dnBDP(lambda=speciation, mu=extinction, rho=sampling_prob, rootAge=root_age, samplingStrategy=\"uniform\", condition=\"nTaxa\", nTaxa=n_taxa, names=taxon_names, constraints=constraints)" << std::endl;
     out << "psi.setValue(T)" << std::endl;
     out << std::endl;
+    
+
+    out << "fossil_calib_rate ~ dnExponential(1.0)" << std::endl;
+    out << std::endl;
+    
+    for (int i=0; i<tree->getNumberOfCalibrations(); i++)
+    {
+        FossilCalibration* fc = tree->getCalibrationIndexed(i);
+        out << "tmrca_clade_" << i+1 << " := tmrca(psi, clade_" << i+1 << ")" << std::endl;
+        out << "fossil_age_" << i+1 << " ~ dnExponential(fossil_calib_rate, offset=-tmrca_clade_" << i+1 << ")" << std::endl;
+        out << "fossil_age_" << i+1 << ".clamp( -(10.0-" << fc->getTime() << ") )" << std::endl;
+    }
+    
+    out << std::endl;
+    out << "moves[++mi] = mvScale(speciation,lambda=1.0,tune=true,weight=3.0)" << std::endl;
+    out << "moves[++mi] = mvSlide(relative_extinction,delta=1.0,tune=true,weight=3.0)" << std::endl;
+    out << "moves[++mi] = mvSlide(root_age,delta=1.0,tune=true,weight=3.0)" << std::endl;
+    out << "moves[++mi] = mvScale(fossil_calib_rate,lambda=1.0,tune=true,weight=3.0)" << std::endl;
+    out << "moves[++mi] = mvSubtreeScale(psi, weight=3.0)" << std::endl;
+    out << "moves[++mi] = mvNodeTimeSlideUniform(psi, weight=15.0)" << std::endl;
+
     
 }
 
