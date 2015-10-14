@@ -24,7 +24,7 @@ Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r) {
     
     simulateMorphologicalCharacters();
 //    printExtant(true);
-    print(true);
+    //print(true);
 }
 
 Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> theta, std::vector<double> pi, double alpha) {
@@ -45,7 +45,7 @@ Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> 
     
     simulateMolecularCharacters(theta, pi, alpha);
 //    printExtant(false);
-    print(false);
+    //print(false);
 }
 
 
@@ -339,6 +339,9 @@ void Data::simulateMorphologicalCharacters(void) {
                 isVariable = false;
             else
                 isVariable = true;
+                
+            isVariable = true; // NOTE: We allow invariant characters as long as RevBayes
+                               //       can't deal with them properly.
             } while (isVariable == false);
             
         }

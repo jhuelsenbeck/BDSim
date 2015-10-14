@@ -8,24 +8,24 @@
 
 Settings::Settings(int argc, char *argv[]) {
 
-#	if 1
+#	if 0
 	/* set up fake command-line argument string */
 	char *cmdString[20];
 	cmdString[ 0] = (char*)"bdsm";
-	cmdString[ 1] = (char*)"-lambda";
-	cmdString[ 2] = (char*)"0.5";
-	cmdString[ 3] = (char*)"-mu";
-	cmdString[ 4] = (char*)"0.1";
+	cmdString[ 1] = (char*)"-nt";
+	cmdString[ 2] = (char*)"20";
+	cmdString[ 3] = (char*)"-div";
+	cmdString[ 4] = (char*)"0.5";
 	cmdString[ 5] = (char*)"-phi";
 	cmdString[ 6] = (char*)"0.1";
-	cmdString[ 7] = (char*)"-outFile";
-    cmdString[ 8] = (char*)"test";
-    cmdString[ 9] = (char*)"-outPath";
-    cmdString[10] = (char*)"/Users/hoehna/Desktop/LondonSimulations/data";
-    cmdString[11] = (char*)"-nr";
-    cmdString[12] = (char*)"1";
-	cmdString[13] = (char*)"-nt";
-	cmdString[14] = (char*)"20";
+	cmdString[ 7] = (char*)"-t";
+	cmdString[ 8] = (char*)"10.0";
+	cmdString[ 9] = (char*)"-outFile";
+    cmdString[10] = (char*)"test";
+    cmdString[11] = (char*)"-outPath";
+    cmdString[12] = (char*)"/Users/johnh/Desktop/LondonSimulations/data";
+    cmdString[13] = (char*)"-nr";
+    cmdString[14] = (char*)"1";
     cmdString[15] = (char*)"-bf";
 	cmdString[16] = (char*)"(0.25, 0.25, 0.25, 0.25)";
     cmdString[17] = (char*)"-exch";
@@ -37,7 +37,7 @@ Settings::Settings(int argc, char *argv[]) {
     // process the string looking for number lists
     preprocessStr(&argc, argv);
     
-	enum Mode { OUTPUT_FILE, OUTPUT_PATH, NUM_REPS, LAMBDA, MU, PHI, NUM_TAXA, NUM_MORPH, NUM_MOL, GAMMA_SHAPE, EXC_PARM, BASE_FREQ, NONE };
+	enum Mode { OUTPUT_FILE, OUTPUT_PATH, NUM_REPS, LAMBDA, MU, PHI, NUM_TAXA, NUM_MORPH, NUM_MOL, GAMMA_SHAPE, EXC_PARM, BASE_FREQ, MORPH_RATE, MOL_RATE, E_TO_S_RATE, SIM_DUR, NONE };
 
 	/* set default values for parameters */
     numReplicates                   = 1;
@@ -45,6 +45,7 @@ Settings::Settings(int argc, char *argv[]) {
     outputFilePath                  = "";
 	speciationRate                  = 1.0;
 	extinctionRate                  = 0.5;
+    extinctionToSpeciationRate      = 0.5;
     fossilizationRate               = 0.5;
 	numLivingTaxa                   = 10;
     numMorphologicalCharacters      = 50;
@@ -52,6 +53,9 @@ Settings::Settings(int argc, char *argv[]) {
     gammaShapeParameter             = 1000.0;
     exchangeabilityParameters       = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
     stationaryFrequenciesParameters = { 0.25, 0.25, 0.25, 0.25 };
+    morphologicalRate               = 0.1;
+    molecularRate                   = 0.1;
+    simDuration                     = 10.0;
 	
     int vecNum = 0;
 	if (argc > 1)
@@ -66,7 +70,7 @@ Settings::Settings(int argc, char *argv[]) {
 		for (int i=1; i<cmds.size(); i++)
 			{
 			std::string cmd = cmds[i];
-			std::cout << cmd << std::endl;
+			//std::cout << cmd << std::endl;
 			if (status == NONE)
 				{
 				/* read the parameter specifier */
@@ -74,8 +78,16 @@ Settings::Settings(int argc, char *argv[]) {
 					status = LAMBDA;
 				else if ( cmd == "-mu" )
 					status = MU;
+				else if ( cmd == "-div" )
+					status = E_TO_S_RATE;
 				else if ( cmd == "-phi" )
 					status = PHI;
+				else if ( cmd == "-t" )
+					status = SIM_DUR;
+				else if ( cmd == "-molR" )
+					status = MOL_RATE;
+				else if ( cmd == "-morphR" )
+					status = MORPH_RATE;
 				else if ( cmd == "-outFile" )
                     status = OUTPUT_FILE;
                 else if ( cmd == "-outPath" )
@@ -107,8 +119,16 @@ Settings::Settings(int argc, char *argv[]) {
 					speciationRate = atof(argv[i]);
 				else if ( status == MU )
 					extinctionRate = atof(argv[i]);
+				else if ( status == E_TO_S_RATE )
+					extinctionToSpeciationRate = atof(argv[i]);
 				else if ( status == PHI )
 					fossilizationRate = atof(argv[i]);
+				else if ( status == SIM_DUR )
+					simDuration = atof(argv[i]);
+				else if ( status == MOL_RATE )
+					molecularRate = atof(argv[i]);
+				else if ( status == MORPH_RATE )
+					morphologicalRate = atof(argv[i]);
 				else if ( status == OUTPUT_FILE )
                     outputFileName = argv[i];
                 else if ( status == OUTPUT_PATH )
@@ -139,8 +159,12 @@ Settings::Settings(int argc, char *argv[]) {
 	else
 		{
 		printUsage();
-		}	
-
+		}
+    
+    
+    speciationRate = (log((double)numLivingTaxa) - log(2.0)) / ((1.0 - extinctionToSpeciationRate) * simDuration);
+    extinctionRate = speciationRate * extinctionToSpeciationRate;
+    
     print();
 }
 
@@ -215,6 +239,9 @@ void Settings::print(void) {
     std::cout << "Speciation rate                 = " << speciationRate << std::endl;
     std::cout << "Extinction rate                 = " << extinctionRate << std::endl;
     std::cout << "Fossilization rate              = " << fossilizationRate << std::endl;
+    std::cout << "Simulation duration             = " << simDuration << std::endl;
+    std::cout << "Morphological evolution rate    = " << morphologicalRate << std::endl;
+    std::cout << "Molecular evolution rate        = " << molecularRate << std::endl;
     std::cout << "No. of extant taxa              = " << numLivingTaxa << std::endl;
     std::cout << "No. of morphological characters = " << numMorphologicalCharacters << std::endl;
     std::cout << "No. of molecular characters     = " << numMolecularCharacters << std::endl;
@@ -236,9 +263,11 @@ void Settings::printUsage(void) {
     std::cout << "   -outPath : Output file path" << std::endl;
     std::cout << "   -nr      : Number of simulation replicates" << std::endl;
 	std::cout << "   -nt      : Number of living taxa" << std::endl;
-	std::cout << "   -lambda  : Speciation rate" << std::endl;
-	std::cout << "   -mu      : Extinction rate" << std::endl;
+	std::cout << "   -div     : Extinction / Speciation rate" << std::endl;
 	std::cout << "   -phi     : Fossilization rate" << std::endl;
+	std::cout << "   -t       : Simulation duration" << std::endl;
+	std::cout << "   -molR    : Molcular evolution rate" << std::endl;
+	std::cout << "   -morphR  : Morphological evolution rate" << std::endl;
 	std::cout << "   -nmorph  : Number of morphological characters" << std::endl;
 	std::cout << "   -nmol    : Number of molecular characters" << std::endl;
 	std::cout << "   -gamma   : Gamma shape parameter" << std::endl;

@@ -22,6 +22,10 @@ class Settings {
         std::string         getFilePath(void) { return outputFilePath; }
         std::string         getFullFileName(void) { return outputFilePath + "/" + outputFileName; }
         std::vector<double> getStationaryFrequenciesParameters(void) { return stationaryFrequenciesParameters; }
+        double              getMorphologicalRate(void) { return morphologicalRate; }
+        double              getMolecularRate(void) { return molecularRate; }
+        double              getExtinctionToSpeciationRate(void) { return extinctionToSpeciationRate; }
+        double              getSimDuration(void) { return simDuration; }
         void                print(void);
         void                setSpeciationRate(double x) { speciationRate = x; }
         void                setExchangeabilityParameters(std::vector<double> x) { exchangeabilityParameters = x; }
@@ -34,7 +38,11 @@ class Settings {
         void                setOutputFileName(std::string s) { outputFileName = s; }
         void                setOutputFilePath(std::string s) { outputFilePath = s; }
         void                setStationaryFrequenciesParameters(std::vector<double> x) { stationaryFrequenciesParameters = x; }
-
+        void                setMorphologicalRate(double x) { morphologicalRate = x; }
+        void                setMolecularRate(double x) { molecularRate = x; }
+        void                setExtinctionToSpeciationRate(double x) { extinctionToSpeciationRate = x; }
+        void                setSimDuration(double x) { simDuration = x; }
+    
     private:
         void                preprocessStr(int* argc, char *argv[]);
         void                printUsage(void);
@@ -42,7 +50,10 @@ class Settings {
         std::string         outputFilePath;
         double              speciationRate;
         double              extinctionRate;
+        double              extinctionToSpeciationRate;
         double              fossilizationRate;
+        double              morphologicalRate;
+        double              molecularRate;
         int                 numLivingTaxa;
         int                 numMorphologicalCharacters;
         int                 numMolecularCharacters;
@@ -51,6 +62,7 @@ class Settings {
         std::vector<double> stationaryFrequenciesParameters;
         std::vector< std::vector<double> >  tempVectors;
         int                 numReplicates;
+        double              simDuration;
 
         std::vector<std::string> cmds;
 };

@@ -120,7 +120,7 @@ void Tree::buildBirthDeathTree(void) {
             (*it)->setTime(duration);
             extantTaxa.push_back(*it);
             }
-        std::cout << "Number of nodes = " << nodes.size() << " Number of extant taxa = " << activeNodes.size() << " Duration = " << duration << std::endl;
+        //std::cout << "Number of nodes = " << nodes.size() << " Number of extant taxa = " << activeNodes.size() << " Duration = " << duration << std::endl;
         if ( (activeNodes.size() != numLivingTaxa) || (mrcaOfExtantTaxa() != root) || fossilTaxa.size() == 0 )
             {
             clearTree();

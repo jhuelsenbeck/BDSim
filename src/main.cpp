@@ -26,9 +26,10 @@ int main (int argc, char* argv[]) {
                     mySettings.getExtinctionRate(),
                     mySettings.getFossilizationRate(),
                     mySettings.getNumLivingTaxa(),
-                    10.0);
-        myTree.printTree();
-        myTree.listCalibrations();
+                    mySettings.getSimDuration());
+        int numFossils = myTree.getNumFossils();
+        //myTree.printTree();
+        //myTree.listCalibrations();
             
         std::stringstream ss_tree;
         ss_tree << mySettings.getFullFileName() << "." << i+1 << ".tree";
@@ -62,7 +63,16 @@ int main (int argc, char* argv[]) {
         treeFileStream << "   tree true_tree = [&R] " << myTree.getNewick() << ";" << std::endl;
         treeFileStream << "end;" << std::endl << std::endl;
         treeFileStream.close();
-            
+
+        std::stringstream snf_tree;
+        snf_tree << mySettings.getFullFileName() << "." << i+1 << ".nfossils";
+        std::string snffile =  snf_tree.str();
+        std::fstream nfFileStream;
+        nfFileStream.open( snf_tree.str().c_str(), std::fstream::out);
+        nfFileStream << numFossils;
+        nfFileStream << std::endl;
+        nfFileStream.close();
+        
         // simulate data
         std::stringstream ss_morph;
         ss_morph << mySettings.getFullFileName() << ".morph." << i+1 << ".nex";
@@ -73,7 +83,7 @@ int main (int argc, char* argv[]) {
                                  mySettings.getNumMorphologicalCharacters(),
                                  &myRandom,
                                  &myTree,
-                                 0.01);
+                                 mySettings.getMorphologicalRate());
         myMorphologicalData.printNexus(morphFileStream,true,true);
         morphFileStream.close();
             
@@ -81,7 +91,7 @@ int main (int argc, char* argv[]) {
                              mySettings.getNumMolecularCharacters(),
                              &myRandom,
                              &myTree,
-                             0.005,
+                             mySettings.getMolecularRate(),
                              mySettings.getExchangeabilityParameters(),
                              mySettings.getStationaryFrequenciesParameters(),
                              mySettings.getGammaShapeParameter());
@@ -94,8 +104,6 @@ int main (int argc, char* argv[]) {
         molFileStream.open( molfile.c_str(), std::fstream::out);
         myMolecularData.printNexus(molFileStream,false,true);
         molFileStream.close();
-            
-        
             
         std::stringstream ss_mol_extant;
         ss_mol_extant << mySettings.getFullFileName() << ".mol.extant.only." << i+1 << ".nex";
