@@ -23,7 +23,7 @@ Settings::Settings(int argc, char *argv[]) {
 	cmdString[ 9] = (char*)"-outFile";
     cmdString[10] = (char*)"test";
     cmdString[11] = (char*)"-outPath";
-    cmdString[12] = (char*)"/Users/johnh/Desktop/LondonSimulations/data";
+    cmdString[12] = (char*)"/Users/johnh/Desktop/LondonSimulations/test";
     cmdString[13] = (char*)"-nr";
     cmdString[14] = (char*)"1";
     cmdString[15] = (char*)"-bf";
@@ -37,7 +37,7 @@ Settings::Settings(int argc, char *argv[]) {
     // process the string looking for number lists
     preprocessStr(&argc, argv);
     
-	enum Mode { OUTPUT_FILE, OUTPUT_PATH, NUM_REPS, LAMBDA, MU, PHI, NUM_TAXA, NUM_MORPH, NUM_MOL, GAMMA_SHAPE, EXC_PARM, BASE_FREQ, MORPH_RATE, MOL_RATE, E_TO_S_RATE, SIM_DUR, NONE };
+	enum Mode { OUTPUT_FILE, OUTPUT_PATH, NUM_REPS, LAMBDA, MU, PHI, NUM_TAXA, NUM_MORPH, NUM_MOL, GAMMA_SHAPE, EXC_PARM, BASE_FREQ, MORPH_RATE, MOL_RATE, E_TO_S_RATE, SIM_DUR, MOL_EVENT_RATE, MORPH_EVENT_RATE, NONE };
 
 	/* set default values for parameters */
     numReplicates                   = 1;
@@ -56,6 +56,10 @@ Settings::Settings(int argc, char *argv[]) {
     morphologicalRate               = 0.1;
     molecularRate                   = 0.1;
     simDuration                     = 10.0;
+    molEventRate                    = 0.0;
+    molEventMag                     = 50.0;
+    morphEventRate                  = 0.0;
+    morphEventMag                   = 50.0;
 	
     int vecNum = 0;
 	if (argc > 1)
@@ -106,6 +110,10 @@ Settings::Settings(int argc, char *argv[]) {
 					status = EXC_PARM;
 				else if ( cmd == "-bf" )
 					status = BASE_FREQ;
+				else if ( cmd == "-molevrate" )
+					status = MOL_EVENT_RATE;
+				else if ( cmd == "-morphevrate" )
+					status = MORPH_EVENT_RATE;
 				else
 					{
 					std::cerr << "Could not interpret option \"" << cmd << "\"." << std::endl;
@@ -129,6 +137,10 @@ Settings::Settings(int argc, char *argv[]) {
 					molecularRate = atof(argv[i]);
 				else if ( status == MORPH_RATE )
 					morphologicalRate = atof(argv[i]);
+				else if ( status == MOL_EVENT_RATE )
+					molEventRate = atof(argv[i]);
+				else if ( status == MORPH_EVENT_RATE )
+					morphEventRate = atof(argv[i]);
 				else if ( status == OUTPUT_FILE )
                     outputFileName = argv[i];
                 else if ( status == OUTPUT_PATH )
@@ -254,26 +266,30 @@ void Settings::print(void) {
     for (int i=0; i<stationaryFrequenciesParameters.size(); i++)
         std::cout << stationaryFrequenciesParameters[i] << " ";
     std::cout << ")" << std::endl;
+    std::cout << "Molecular switch rate           = " << molEventRate << std::endl;
+    std::cout << "Morphological switch rate       = " << morphEventRate << std::endl;
 }
 
 void Settings::printUsage(void) {
 
 	std::cout << "Usage:" << std::endl;
-    std::cout << "   -outFile : Output file name" << std::endl;
-    std::cout << "   -outPath : Output file path" << std::endl;
-    std::cout << "   -nr      : Number of simulation replicates" << std::endl;
-	std::cout << "   -nt      : Number of living taxa" << std::endl;
-	std::cout << "   -div     : Extinction / Speciation rate" << std::endl;
-	std::cout << "   -phi     : Fossilization rate" << std::endl;
-	std::cout << "   -t       : Simulation duration" << std::endl;
-	std::cout << "   -molR    : Molcular evolution rate" << std::endl;
-	std::cout << "   -morphR  : Morphological evolution rate" << std::endl;
-	std::cout << "   -nmorph  : Number of morphological characters" << std::endl;
-	std::cout << "   -nmol    : Number of molecular characters" << std::endl;
-	std::cout << "   -gamma   : Gamma shape parameter" << std::endl;
-	std::cout << "   -exch    : Exchangeability parameters" << std::endl;
-	std::cout << "   -bf      : Base frequencies" << std::endl;
-	std::cout << std::endl;
+    std::cout << "   -outFile     : Output file name" << std::endl;
+    std::cout << "   -outPath     : Output file path" << std::endl;
+    std::cout << "   -nr          : Number of simulation replicates" << std::endl;
+	std::cout << "   -nt          : Number of living taxa" << std::endl;
+	std::cout << "   -div         : Extinction / Speciation rate" << std::endl;
+	std::cout << "   -phi         : Fossilization rate" << std::endl;
+	std::cout << "   -t           : Simulation duration" << std::endl;
+	std::cout << "   -molR        : Molcular evolution rate" << std::endl;
+	std::cout << "   -morphR      : Morphological evolution rate" << std::endl;
+	std::cout << "   -nmorph      : Number of morphological characters" << std::endl;
+	std::cout << "   -nmol        : Number of molecular characters" << std::endl;
+	std::cout << "   -gamma       : Gamma shape parameter" << std::endl;
+	std::cout << "   -exch        : Exchangeability parameters" << std::endl;
+	std::cout << "   -bf          : Base frequencies" << std::endl;
+	std::cout << "   -molevrate   : Rate switch rate for molecular characters" << std::endl;
+	std::cout << "   -morphevrate : Rate switch rate for morphological characters" << std::endl;
+    std::cout << std::endl;
 	exit(0);
 
 }

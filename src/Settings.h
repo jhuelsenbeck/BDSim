@@ -26,6 +26,10 @@ class Settings {
         double              getMolecularRate(void) { return molecularRate; }
         double              getExtinctionToSpeciationRate(void) { return extinctionToSpeciationRate; }
         double              getSimDuration(void) { return simDuration; }
+        double              getMolEventRate(void) { return molEventRate; }
+        double              getMolEventMag(void) { return molEventMag; }
+        double              getMorphEventRate(void) { return morphEventRate; }
+        double              getMorphEventMag(void) { return morphEventMag; }
         void                print(void);
         void                setSpeciationRate(double x) { speciationRate = x; }
         void                setExchangeabilityParameters(std::vector<double> x) { exchangeabilityParameters = x; }
@@ -42,6 +46,10 @@ class Settings {
         void                setMolecularRate(double x) { molecularRate = x; }
         void                setExtinctionToSpeciationRate(double x) { extinctionToSpeciationRate = x; }
         void                setSimDuration(double x) { simDuration = x; }
+        void                setMolEventRate(double x) { molEventRate = x; }
+        void                setMolEventMag(double x) { molEventMag = x; }
+        void                setMorphEventRate(double x) { morphEventRate = x; }
+        void                setMorphEventMag(double x) { morphEventMag = x; }
     
     private:
         void                preprocessStr(int* argc, char *argv[]);
@@ -63,6 +71,10 @@ class Settings {
         std::vector< std::vector<double> >  tempVectors;
         int                 numReplicates;
         double              simDuration;
+        double              molEventRate;
+        double              molEventMag;
+        double              morphEventRate;
+        double              morphEventMag;
 
         std::vector<std::string> cmds;
 };

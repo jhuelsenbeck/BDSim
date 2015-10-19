@@ -24,6 +24,7 @@ class Node {
         bool                        isFossil(void) const { return fossil; }
         bool                        getFlag(void) { return flag; }
         bool                        getIsInReconstructedTree(void) { return isInReconstructedTree; }
+        double                      getVal(void) { return val; }
         void                        removeDescendant(Node* p);
         void                        removeDescendants(void);
         void                        setAncestor(Node* p) { ancestor = p; }
@@ -34,7 +35,7 @@ class Node {
         void                        setTime(double x) { time = x; }
         void                        setFlag(bool tf) { flag = tf; }
         void                        setIsInReconstructedTree(bool tf) { isInReconstructedTree = tf; }
-
+        void                        setVal(double x) { val = x; }
     private:
         int                         index;
         Node*                       ancestor;
@@ -46,6 +47,7 @@ class Node {
         bool                        flag;
         bool                        isInReconstructedTree;
         std::vector<std::string>    taxonBipartition;
+        double                      val;
 };
 
 

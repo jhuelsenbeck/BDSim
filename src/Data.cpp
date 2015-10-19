@@ -1,18 +1,21 @@
 #include <iostream>
 #include "Data.h"
+#include "EventHistory.h"
 #include "MbRandom.h"
 #include "Node.h"
+#include "Settings.h"
 #include "Tree.h"
 
 
 
-Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r) {
+Data::Data(int nn, int nc, MbRandom* rp, Settings* sp, Tree* t, double r) {
 
     numNodes = nn;
     numChar  = nc;
     ranPtr   = rp;
     treePtr  = t;
     rate     = r;
+    settingsPtr = sp;
     
     dataMatrix = new unsigned*[numNodes];
     dataMatrix[0] = new unsigned[numNodes * numChar];
@@ -27,13 +30,14 @@ Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r) {
     //print(true);
 }
 
-Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> theta, std::vector<double> pi, double alpha) {
+Data::Data(int nn, int nc, MbRandom* rp, Settings* sp, Tree* t, double r, std::vector<double> theta, std::vector<double> pi, double alpha) {
 
     numNodes = nn;
     numChar  = nc;
     ranPtr   = rp;
     treePtr  = t;
     rate     = r;
+    settingsPtr = sp;
     
     dataMatrix = new unsigned*[numNodes];
     dataMatrix[0] = new unsigned[numNodes * numChar];
@@ -44,7 +48,7 @@ Data::Data(int nn, int nc, MbRandom* rp, Tree* t, double r, std::vector<double> 
             dataMatrix[i][j] = 0;
     
     simulateMolecularCharacters(theta, pi, alpha);
-//    printExtant(false);
+    printExtant(false);
     //print(false);
 }
 
@@ -200,6 +204,10 @@ void Data::printNexus(std::iostream &outStream, bool isMorph, bool includeFossil
 
 void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<double> pi, double alpha) {
 
+    // get events of rate change
+    EventHistory myEventHistory(treePtr, ranPtr, 50.0, settingsPtr->getMolEventRate());
+    //myEventHistory.print();
+    
     // set up rate matrix
     double q[4][4];
     int k = 0;
@@ -232,12 +240,17 @@ void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<do
             q[i][j] /= averageRate;
         }
     
+    // get the basal rate for the characters
+    double basalRate = rate;
+    
     // simulate
     for (int c=0; c<numChar; c++)
         {
+        // get character rate
         double r = 1.0;
         if (alpha < 100.0)
             r = ranPtr->gammaRv(alpha, alpha);
+            
         for (int n=treePtr->getNumberOfDownPassNodes()-1; n>=0; n--)
             {
             Node* p = treePtr->getDownPassNode(n);
@@ -255,34 +268,67 @@ void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<do
                         break;
                         }
                     }
+                p->setVal(1.0);
                 }
             else
                 {
-                double t = (p->getTime() - p->getAncestor()->getTime()) * r;
-                double curT = 0.0;
-                int curState = dataMatrix[p->getAncestor()->getIndex()][c];
-                while (curT < t)
+                // begin branch sim
+                // initialize interval information for this branch
+                std::vector<double> intervalStarts;
+                std::vector<double> intervalEnds;
+                std::vector<double> intervalBasalRate;
+                double intStart = p->getAncestor()->getTime();
+                double f = p->getAncestor()->getVal();
+                for (int i=0; i<myEventHistory.numEventsForBranchWithIndex(p->getIndex()); i++)
                     {
-                    curT += ranPtr->exponentialRv(-q[curState][curState]);
-                    if (curT < t)
+                    Event* e = myEventHistory.getEvent(p->getIndex(), i);
+                    intervalEnds.push_back( e->getBranchPos() );
+                    intervalStarts.push_back( intStart );
+                    intervalBasalRate.push_back( f );
+                    f *= e->getRateFactor();
+                    intStart = e->getBranchPos();
+                    }
+                intervalEnds.push_back( p->getTime() );
+                intervalStarts.push_back( intStart );
+                intervalBasalRate.push_back( f );
+                p->setVal( f );
+                /*std::cout << "simulating branch " << p->getIndex() << std::endl;
+                for (int i=0; i<intervalEnds.size(); i++)
+                    std::cout << i << " -- " << intervalStarts[i] << " - " << intervalEnds[i] << " " << intervalBasalRate[i] << std::endl; */
+                    
+                // simulate along branch
+                int curState = dataMatrix[p->getAncestor()->getIndex()][c];
+                for (int brI=0; brI<intervalEnds.size(); brI++)
+                    {
+                    double curT = intervalStarts[brI];
+                    double endT = intervalEnds[brI];
+                    double rateMultiplier = basalRate * r * intervalBasalRate[brI];
+
+                    while (curT < endT)
                         {
-                        double u = ranPtr->uniformRv();
-                        double sum = 0.0;
-                        for (int i=0; i<4; i++)
+                        double subRate = -q[curState][curState] * rateMultiplier;
+                        curT += ranPtr->exponentialRv(subRate);
+                        if (curT < endT)
                             {
-                            if (i != curState)
+                            double u = ranPtr->uniformRv();
+                            double sum = 0.0;
+                            for (int i=0; i<4; i++)
                                 {
-                                sum += (-q[curState][i] / q[curState][curState]);
-                                if (u < sum)
+                                if (i != curState)
                                     {
-                                    curState = i;
-                                    break;
+                                    sum += (-q[curState][i] / q[curState][curState]);
+                                    if (u < sum)
+                                        {
+                                        curState = i;
+                                        break;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 dataMatrix[p->getIndex()][c] = curState;
+                // end branch sim
                 }
             }
         }
@@ -291,31 +337,65 @@ void Data::simulateMolecularCharacters(std::vector<double> theta, std::vector<do
 
 void Data::simulateMorphologicalCharacters(void) {
 
+    // get events of rate change
+    EventHistory myEventHistory(treePtr, ranPtr, 50.0, settingsPtr->getMolEventRate());
+    //myEventHistory.print();
+
+    // get the basal rate for the characters
+    double basalRate = rate;
+
     for (int c=0; c<numChar; c++)
         {
-        bool isVariable = false;
-        do
+        for (int n=treePtr->getNumberOfDownPassNodes()-1; n>=0; n--)
             {
-            for (int n=treePtr->getNumberOfDownPassNodes()-1; n>=0; n--)
+            Node* p = treePtr->getDownPassNode(n);
+            if ( treePtr->isRoot(p) == true )
                 {
-                Node* p = treePtr->getDownPassNode(n);
-                if ( treePtr->isRoot(p) == true )
-                    {
-                    // root node
-                    if (ranPtr->uniformRv() < 0.5)
-                        dataMatrix[p->getIndex()][c] = 0;
-                    else
-                        dataMatrix[p->getIndex()][c] = 1;
-                    }
+                // root node
+                if (ranPtr->uniformRv() < 0.5)
+                    dataMatrix[p->getIndex()][c] = 0;
                 else
+                    dataMatrix[p->getIndex()][c] = 1;
+                p->setVal(1.0);
+                }
+            else
+                {
+
+                // initialize interval information for this branch
+                std::vector<double> intervalStarts;
+                std::vector<double> intervalEnds;
+                std::vector<double> intervalBasalRate;
+                double intStart = p->getAncestor()->getTime();
+                double f = p->getAncestor()->getVal();
+                for (int i=0; i<myEventHistory.numEventsForBranchWithIndex(p->getIndex()); i++)
                     {
-                    double t = (p->getTime() - p->getAncestor()->getTime());
-                    double curT = 0.0;
-                    int curState = dataMatrix[p->getAncestor()->getIndex()][c];
-                    while (curT < t)
+                    Event* e = myEventHistory.getEvent(p->getIndex(), i);
+                    intervalEnds.push_back( e->getBranchPos() );
+                    intervalStarts.push_back( intStart );
+                    intervalBasalRate.push_back( f );
+                    f *= e->getRateFactor();
+                    intStart = e->getBranchPos();
+                    }
+                intervalEnds.push_back( p->getTime() );
+                intervalStarts.push_back( intStart );
+                intervalBasalRate.push_back( f );
+                p->setVal( f );
+                /*std::cout << "simulating branch " << p->getIndex() << std::endl;
+                for (int i=0; i<intervalEnds.size(); i++)
+                    std::cout << i << " -- " << intervalStarts[i] << " - " << intervalEnds[i] << " " << intervalBasalRate[i] << std::endl; */
+                    
+                // simulate along branch
+                int curState = dataMatrix[p->getAncestor()->getIndex()][c];
+                for (int brI=0; brI<intervalEnds.size(); brI++)
+                    {
+                    double curT = intervalStarts[brI];
+                    double endT = intervalEnds[brI];
+                    double rateMultiplier = basalRate * 1.0 * intervalBasalRate[brI];
+                    while (curT < endT)
                         {
-                        curT += ranPtr->exponentialRv(rate);
-                        if (curT < t)
+                        double subRate = 1.0 * rateMultiplier;
+                        curT += ranPtr->exponentialRv(subRate);
+                        if (curT < endT)
                             {
                             if (curState == 0)
                                 curState = 1;
@@ -323,27 +403,10 @@ void Data::simulateMorphologicalCharacters(void) {
                                 curState = 0;
                             }
                         }
-                    dataMatrix[p->getIndex()][c] = curState;
                     }
+                dataMatrix[p->getIndex()][c] = curState;
                 }
-                
-                
-            std::vector<Node*> living = treePtr->getExtantTaxa();
-            int numZeros = 0;
-            for (int i=0; i<living.size(); i++)
-                {
-                if (dataMatrix[ living[i]->getIndex() ][c] == 0)
-                    numZeros++;
-                }
-            if (numZeros == 0 || numZeros == living.size())
-                isVariable = false;
-            else
-                isVariable = true;
-                
-            isVariable = true; // NOTE: We allow invariant characters as long as RevBayes
-                               //       can't deal with them properly.
-            } while (isVariable == false);
-            
+            }
         }
             
 

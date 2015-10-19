@@ -82,6 +82,7 @@ int main (int argc, char* argv[]) {
         Data myMorphologicalData(myTree.getNumberOfNodes(),
                                  mySettings.getNumMorphologicalCharacters(),
                                  &myRandom,
+                                 &mySettings,
                                  &myTree,
                                  mySettings.getMorphologicalRate());
         myMorphologicalData.printNexus(morphFileStream,true,true);
@@ -90,12 +91,12 @@ int main (int argc, char* argv[]) {
         Data myMolecularData(myTree.getNumberOfNodes(),
                              mySettings.getNumMolecularCharacters(),
                              &myRandom,
+                             &mySettings,
                              &myTree,
                              mySettings.getMolecularRate(),
                              mySettings.getExchangeabilityParameters(),
                              mySettings.getStationaryFrequenciesParameters(),
                              mySettings.getGammaShapeParameter());
-            
             
         std::stringstream ss_mol;
         ss_mol << mySettings.getFullFileName() << ".mol." << i+1 << ".nex";
