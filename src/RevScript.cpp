@@ -495,11 +495,11 @@ void RevScript::printRelativeMorphologicalClock( std::ostream &out )
     out << "# relative morphological clock #" << std::endl;
     out << "################################" << std::endl;
     out << std::endl;
-    out << "log_rel_morph_clock_rate ~ dnUniform(-10,2)" << std::endl;
-    out << "rel_morph_clock_rate := 10^log_rel_morph_clock_rate" << std::endl;
+    out << "rel_morph_clock_rate ~ dnGamma(2,2)" << std::endl;
     out << "morph_clock_rate := rel_morph_clock_rate * mol_clock_rate" << std::endl;
     out << std::endl;
-    out << "moves[++mi] = mvSlide(log_rel_morph_clock_rate, weight=1.0)" << std::endl;
+    out << "moves[++mi] = mvSlide(rel_morph_clock_rate, weight=1.0)" << std::endl;
+    out << "moves[++mi] = mvScale(rel_morph_clock_rate, weight=1.0)" << std::endl;
     out << std::endl;
     
 }
@@ -514,10 +514,32 @@ void RevScript::printStrictMolecularClock( std::ostream &out )
     out << "# strict global clock #" << std::endl;
     out << "#######################" << std::endl;
     out << std::endl;
-    out << "log_mol_clock_rate ~ dnUniform(-10,2)" << std::endl;
-    out << "mol_clock_rate := 10^log_mol_clock_rate" << std::endl;
+    
+//    out << "log_mol_clock_rate ~ dnUniform(-10,2)" << std::endl;
+//    out << "mol_clock_rate := 10^log_mol_clock_rate" << std::endl;
+//    out << std::endl;
+//    out << "moves[++mi] = mvSlide(log_mol_clock_rate, weight=1.0)" << std::endl;
+//    out << std::endl;
+    
+    out << "mol_clock_rate ~ dnExponential(1.0)" << std::endl;
     out << std::endl;
-    out << "moves[++mi] = mvSlide(log_mol_clock_rate, weight=1.0)" << std::endl;
+    out << "moves[++mi] = mvScale(mol_clock_rate, weight=1.0)" << std::endl;
+    out << std::endl;
+    
+    out << "up_down_scale = mvUpDownScale(weight=2.0)" << std::endl;
+    out << "up_down_scale.addVariable( psi, TRUE )" << std::endl;
+    
+    if ( prior == BDP )
+    {
+        out << "up_down_scale.addVariable( root_age, TRUE )" << std::endl;
+    }
+    else
+    {
+        out << "up_down_scale.addVariable( process_time, TRUE )" << std::endl;
+    }
+    out << "up_down_scale.addVariable( mol_clock_rate, FALSE )" << std::endl;
+    out << std::endl;
+    out << "moves[++mi] = up_down_scale" << std::endl;
     out << std::endl;
     
 }
