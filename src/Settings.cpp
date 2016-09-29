@@ -8,9 +8,9 @@
 
 Settings::Settings(int argc, char *argv[]) {
 
-#	if 0
+#	if 1
 	/* set up fake command-line argument string */
-	char *cmdString[20];
+	char *cmdString[22];
 	cmdString[ 0] = (char*)"bdsm";
 	cmdString[ 1] = (char*)"-nt";
 	cmdString[ 2] = (char*)"20";
@@ -30,14 +30,16 @@ Settings::Settings(int argc, char *argv[]) {
 	cmdString[16] = (char*)"(0.25, 0.25, 0.25, 0.25)";
     cmdString[17] = (char*)"-exch";
 	cmdString[18] = (char*)"(1.0, 1.0, 1.0, 1.0, 1.0, 1.0)";
-	argc = 19;
+	cmdString[19] = (char*)"-punc";
+	cmdString[20] = (char*)"0.1";
+	argc = 21;
 	argv = cmdString;
 #	endif
 
     // process the string looking for number lists
     preprocessStr(&argc, argv);
     
-	enum Mode { OUTPUT_FILE, OUTPUT_PATH, NUM_REPS, LAMBDA, MU, PHI, NUM_TAXA, NUM_MORPH, NUM_MOL, GAMMA_SHAPE, EXC_PARM, BASE_FREQ, MORPH_RATE, MOL_RATE, E_TO_S_RATE, SIM_DUR, MOL_EVENT_RATE, MORPH_EVENT_RATE, NONE };
+	enum Mode { OUTPUT_FILE, OUTPUT_PATH, NUM_REPS, LAMBDA, MU, PHI, NUM_TAXA, NUM_MORPH, NUM_MOL, GAMMA_SHAPE, EXC_PARM, BASE_FREQ, MORPH_RATE, MOL_RATE, E_TO_S_RATE, SIM_DUR, MOL_EVENT_RATE, MORPH_EVENT_RATE, PUNC_FRAC, NONE };
 
 	/* set default values for parameters */
     numReplicates                   = 1;
@@ -60,6 +62,7 @@ Settings::Settings(int argc, char *argv[]) {
     molEventMag                     = 50.0;
     morphEventRate                  = 0.0;
     morphEventMag                   = 50.0;
+    punctucatedFraction             = 0.0;
 	
     int vecNum = 0;
 	if (argc > 1)
@@ -114,6 +117,8 @@ Settings::Settings(int argc, char *argv[]) {
 					status = MOL_EVENT_RATE;
 				else if ( cmd == "-morphevrate" )
 					status = MORPH_EVENT_RATE;
+				else if ( cmd == "-punc" )
+					status = PUNC_FRAC;
 				else
 					{
 					std::cerr << "Could not interpret option \"" << cmd << "\"." << std::endl;
@@ -159,6 +164,8 @@ Settings::Settings(int argc, char *argv[]) {
                     exchangeabilityParameters = tempVectors[vecNum++];
 				else if ( status == BASE_FREQ )
 					stationaryFrequenciesParameters = tempVectors[vecNum++];
+				else if ( status == PUNC_FRAC )
+					punctucatedFraction = atof(argv[i]);
 				else
 					{
 					std::cerr << "Unknown status reading command line information" << std::endl;

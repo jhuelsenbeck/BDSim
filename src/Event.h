@@ -26,7 +26,7 @@ class Event {
 class CompEvents {
     
     public:
-        bool                        operator()(Event* e1, Event* e2) const { return (*e1 < *e2); }
+        bool                operator()(Event* e1, Event* e2) const { return (*e1 < *e2); }
 };
 
 #endif

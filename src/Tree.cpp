@@ -165,6 +165,8 @@ void Tree::buildBirthDeathTree(void) {
             }
         }
     initializeDownPassSequence();
+    printTree();
+    std::cout << getNewick() <<std::endl;
 }
 
 void Tree::clearTree(void) {
@@ -508,6 +510,27 @@ Node* Tree::randomlyChosenNodeFromSet(std::set<Node*>& s) {
         k++;
         }
     return NULL;
+}
+
+void Tree::setPunctuatedBranches(void) {
+
+    for (int n=(int)downPassSequence.size()-1; n>=0; n--)
+        {
+        Node* p = downPassSequence[n];
+        if (p->getNumDescendants() > 0)
+            {
+            std::vector<Node*> des = p->getDescendants();
+            int whichNode = (int)(ranPtr->uniformRv() * des.size());
+            for (int i=0; i<des.size(); i++)
+                {
+                if (i == whichNode)
+                    {
+                    des[i]->setIsPunctuatedBranch(true);
+                    break;
+                    }
+                }
+            }
+        }
 }
 
 void Tree::showTree(Node* p, int indent) {

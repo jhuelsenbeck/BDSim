@@ -31,6 +31,7 @@ class Tree {
         void                            printTree(void);
         void                            markReconstructedTree(void);
         void                            removeFossils(void);
+        void                            setPunctuatedBranches(void);
     
     private:
         Node*                           addNode(void);

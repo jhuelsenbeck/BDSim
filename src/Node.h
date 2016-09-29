@@ -25,6 +25,7 @@ class Node {
         bool                        getFlag(void) { return flag; }
         bool                        getIsInReconstructedTree(void) { return isInReconstructedTree; }
         double                      getVal(void) { return val; }
+        bool                        getIsPunctuatedBranch(void) { return isPunctuatedBranch; }
         void                        removeDescendant(Node* p);
         void                        removeDescendants(void);
         void                        setAncestor(Node* p) { ancestor = p; }
@@ -36,6 +37,8 @@ class Node {
         void                        setFlag(bool tf) { flag = tf; }
         void                        setIsInReconstructedTree(bool tf) { isInReconstructedTree = tf; }
         void                        setVal(double x) { val = x; }
+        void                        setIsPunctuatedBranch(bool tf) { isPunctuatedBranch = tf; }
+    
     private:
         int                         index;
         Node*                       ancestor;
@@ -48,6 +51,7 @@ class Node {
         bool                        isInReconstructedTree;
         std::vector<std::string>    taxonBipartition;
         double                      val;
+        bool                        isPunctuatedBranch;
 };
 
 

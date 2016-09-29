@@ -340,6 +340,8 @@ void Data::simulateMorphologicalCharacters(void) {
     // get events of rate change
     EventHistory myEventHistory(treePtr, ranPtr, 50.0, settingsPtr->getMolEventRate());
     //myEventHistory.print();
+    
+    double punctuatedFraction = settingsPtr->getPunctucatedFraction();
 
     // get the basal rate for the characters
     double basalRate = rate;
@@ -386,6 +388,16 @@ void Data::simulateMorphologicalCharacters(void) {
                     
                 // simulate along branch
                 int curState = dataMatrix[p->getAncestor()->getIndex()][c];
+                if (p->getIsPunctuatedBranch() == true)
+                    {
+                    if (ranPtr->uniformRv() < punctuatedFraction)
+                        {
+                        if (curState == 0)
+                            curState = 1;
+                        else
+                            curState = 0;
+                        }
+                    }
                 for (int brI=0; brI<intervalEnds.size(); brI++)
                     {
                     double curT = intervalStarts[brI];

@@ -9,7 +9,7 @@ Node::Node(void) {
     name     = "";
     fossil   = false;
     extinct  = false;
-    
+    isPunctuatedBranch = false;
 }
 
 void Node::addDescendant(Node* p) {
